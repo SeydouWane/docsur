@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { MailService } from '../mail/mail.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -19,6 +20,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly audit: AuditService,
+    private readonly mail: MailService,
   ) {}
 
   // Enrôlement par domaine (§4, pilier 1, MVP) : le premier compte créé sur
@@ -63,6 +65,8 @@ export class AuthService {
       action: estNouvelleOrganisation ? 'organisation.creation' : 'utilisateur.inscription',
       adresseIp,
     });
+
+    await this.mail.envoyerBienvenue(utilisateur.email, utilisateur.nom);
 
     return this.emettreSession(utilisateur.id, utilisateur.organisationId, utilisateur.role);
   }
