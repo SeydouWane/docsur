@@ -43,12 +43,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/outils/fusionner" className="hover:text-ink">
                 Fusionner un PDF
               </Link>
-              <a
-                href="/docs/specifications.html"
-                className="hover:text-ink"
-              >
+              <a href="/docs/specifications.html" className="hover:text-ink">
                 Spécifications
               </a>
+              <Link href="/connexion" className="hover:text-ink">
+                Connexion
+              </Link>
+              <Link
+                href="/inscription"
+                className="rounded-lg bg-accent px-3 py-1.5 text-accent-ink"
+              >
+                Créer une organisation
+              </Link>
             </nav>
           </div>
         </header>
