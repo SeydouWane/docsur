@@ -9,6 +9,7 @@ import { DocumentsModule } from './documents/documents.module';
 import { OrganisationsModule } from './organisations/organisations.module';
 import { UtilisateursModule } from './utilisateurs/utilisateurs.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
+import { ConversionsModule } from './conversions/conversions.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
     OrganisationsModule,
     UtilisateursModule,
     WorkspacesModule,
+    ConversionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

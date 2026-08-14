@@ -16,14 +16,17 @@ modèle de données, sécurité et conformité.
   pour l'autorité de certification interne, horodatage RFC 3161 auto-hébergé.
   Pas de dépendance à un prestataire commercial eIDAS pour les niveaux
   simple et avancé (détail en §7 des spécifications).
+- **Conversions Office** : [Gotenberg](https://gotenberg.dev/) (LibreOffice +
+  Chromium en conteneur) plutôt qu'un moteur maison — traitement serveur
+  éphémère, rien n'est écrit sur disque côté API.
 
 ## Structure du dépôt
 
 ```
 apps/
   web/    Next.js (App Router, TS, Tailwind, motion) — landing, catalogue
-          d'outils et outils PDF côté navigateur
-  api/    NestJS + Prisma — enrôlement, RBAC, journal d'audit, email
+          d'outils et outils PDF côté navigateur ou via l'API
+  api/    NestJS + Prisma — enrôlement, RBAC, journal d'audit, email, conversions
 docs/
   specifications.html   Dossier de spécifications
 ```
@@ -34,7 +37,11 @@ docs/
    ```bash
    docker run -d --name docsur-postgres -e POSTGRES_USER=docsur -e POSTGRES_PASSWORD=docsur -e POSTGRES_DB=docsur -p 5544:5432 postgres:16-alpine
    ```
-2. **API** :
+2. **Gotenberg** (Docker, conversions Office/HTML → PDF) :
+   ```bash
+   docker run -d --name aegis-gotenberg -p 3002:3000 gotenberg/gotenberg:8
+   ```
+3. **API** :
    ```bash
    cd apps/api
    npm install
@@ -46,7 +53,7 @@ docs/
    Sous Windows, `npm run start:dev` (mode watch) plante parfois à cause d'un
    bug connu de `@nestjs/cli` (tree-kill) — `npm run build` puis `node dist/main.js`
    est plus fiable ; à relancer manuellement après chaque modification.
-3. **Web**, dans un autre terminal :
+4. **Web**, dans un autre terminal :
    ```bash
    cd apps/web
    npm install
@@ -63,32 +70,47 @@ identifiants réels ; voir `apps/api/.env.example` pour le format attendu.
 - `/outils` — catalogue complet des outils PDF, organisé par catégorie ; chaque
   carte indique si le traitement est local (navigateur) ou serveur (chiffré,
   éphémère).
-- `/outils/fusionner` — seul outil réellement fonctionnel à ce stade : fusion
-  de PDF entièrement côté navigateur avec `pdf-lib`, aucun fichier envoyé à
-  un serveur.
 - `/outils/[slug]` — page « bientôt disponible » pour les outils du catalogue
   pas encore construits.
 - `/inscription`, `/connexion`, `/tableau-de-bord` — branchés sur l'API réelle.
 
+Outils fonctionnels à ce stade (pilier 3) :
+
+| Outil | Traitement |
+| --- | --- |
+| Fusionner, Diviser, Supprimer/Extraire des pages, Réorganiser, Pivoter | Local (`pdf-lib` + aperçu `pdfjs-dist`) |
+| Numéros de page, Filigrane, Rogner | Local, avec aperçu en direct |
+| JPG en PDF, PDF en JPG | Local (rendu `pdfjs-dist`) |
+| Word/PowerPoint/Excel/HTML en PDF | Serveur, via Gotenberg |
+
+Les outils locaux affichent et manipulent le document réellement rendu
+(vignettes `pdfjs-dist`) plutôt que de simples champs texte.
+
 ## apps/api
 
-Squelette du pilier 1 (console administrateur) :
+Pilier 1 (console administrateur) :
 
-- `POST /auth/inscription` — enrôlement par domaine email : le premier compte
-  d'un domaine fonde l'organisation et devient administrateur, les suivants
-  rejoignent l'organisation en tant que collaborateurs.
+- `POST /auth/inscription` — enrôlement par domaine email (ou compte
+  individuel, forcé pour les domaines email publics) : le premier compte
+  d'un domaine fonde l'organisation et devient administrateur.
 - `POST /auth/connexion` — authentification, émission d'un JWT.
 - `GET /auth/moi` — profil de l'utilisateur authentifié.
-- `GET /documents` — métadonnées des documents de l'organisation (RBAC via
-  `JwtAuthGuard` + `@Roles()`).
+- `GET/PATCH /utilisateurs` — gestion des collaborateurs par l'ADMIN de leur
+  organisation (activation/désactivation).
+- `GET/POST /workspaces` — démembrements de l'organisation (équipes).
+- `GET/PATCH /organisations` — vue et contrôle plateforme, réservés au
+  superadmin (`Utilisateur.estSuperAdmin`).
 
-Chaque inscription et connexion écrit une entrée dans `JournalAudit`
-(`AuditService`) et déclenche un email de bienvenue (`MailService`, SMTP),
-conformément à l'exigence de traçabilité du §7.
+Chaque compte suspendu ou organisation désactivée perd l'accès immédiatement
+— vérifié en base à chaque requête (`JwtStrategy`), pas seulement à
+l'expiration du token.
 
-Le champ `Utilisateur.estSuperAdmin` porte un pouvoir plateforme distinct du
-rôle RBAC scopé à l'organisation ; il n'est jamais modifiable via une route
-publique, uniquement par opération manuelle en base.
+Pilier 3 (traitement serveur) :
+
+- `POST /conversions/vers-pdf` — document Office (multipart) → PDF, via
+  Gotenberg/LibreOffice.
+- `POST /conversions/html-vers-pdf` — URL → PDF, via Gotenberg/Chromium ;
+  URL validée côté serveur contre le SSRF (IP privées/locales rejetées).
 
 Le schéma de données (`prisma/schema.prisma`) reflète le modèle documenté en
 §6 : `Organisation`, `Utilisateur`, `Workspace`, `Document`, `LienPartage`,
@@ -96,6 +118,7 @@ Le schéma de données (`prisma/schema.prisma`) reflète le modèle documenté e
 
 ## Prochaines étapes
 
-Voir §11 du dossier de spécifications — notamment le déploiement d'une
-instance de test de la chaîne de signature (DSS + step-ca) et la suite du
-pilier 3 (conversion, OCR, censure réelle).
+Voir §11 du dossier de spécifications. Restent à construire : OCR,
+Numériser, Réparer, Compresser, Protéger/Déverrouiller, Formulaires,
+Modifier PDF, Signer, Censurer, Comparer, et la conversion PDF → Office
+(Word/PowerPoint/Excel), plus délicate que le sens inverse.

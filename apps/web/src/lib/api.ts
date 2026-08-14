@@ -51,6 +51,23 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
+// Pas de Content-Type forcé ici : un envoi FormData (fichier) a besoin que
+// le navigateur pose lui-même l'en-tête avec la bonne frontière multipart.
+async function requestBlob(path: string, init?: RequestInit): Promise<Blob> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
+  });
+  if (!res.ok) {
+    throw new ApiError(res.status, await parseErrorMessage(res));
+  }
+  return res.blob();
+}
+
 export type Session = { accessToken: string };
 
 export type Profil = {
@@ -132,5 +149,18 @@ export const api = {
     request<Organisation>(`/organisations/${id}/statut`, {
       method: "PATCH",
       body: JSON.stringify({ statut }),
+    }),
+
+  // Conversions — pilier 3, traitement serveur éphémère (LibreOffice/Chromium).
+  officeVersPdf: (fichier: File) => {
+    const formData = new FormData();
+    formData.append("fichier", fichier);
+    return requestBlob("/conversions/vers-pdf", { method: "POST", body: formData });
+  },
+  htmlVersPdf: (url: string) =>
+    requestBlob("/conversions/html-vers-pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
     }),
 };

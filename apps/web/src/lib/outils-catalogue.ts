@@ -153,7 +153,7 @@ export const categories: Categorie[] = [
         description: "Convertir un document Word en PDF, mise en page conservée.",
         icon: FileText,
         traitement: "serveur",
-        statut: "bientot",
+        statut: "disponible",
       },
       {
         slug: "powerpoint-vers-pdf",
@@ -161,7 +161,7 @@ export const categories: Categorie[] = [
         description: "Convertir une présentation en PDF prêt à partager.",
         icon: Presentation,
         traitement: "serveur",
-        statut: "bientot",
+        statut: "disponible",
       },
       {
         slug: "excel-vers-pdf",
@@ -169,7 +169,7 @@ export const categories: Categorie[] = [
         description: "Convertir un classeur Excel en PDF, feuilles et mises en page conservées.",
         icon: Sheet,
         traitement: "serveur",
-        statut: "bientot",
+        statut: "disponible",
       },
       {
         slug: "html-vers-pdf",
@@ -177,7 +177,7 @@ export const categories: Categorie[] = [
         description: "Convertir une page web en PDF à partir de son adresse.",
         icon: Globe,
         traitement: "serveur",
-        statut: "bientot",
+        statut: "disponible",
       },
     ],
   },
