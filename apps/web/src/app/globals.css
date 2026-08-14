@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #eef2f8;
+  --ink: #0f172a;
+  --muted: #5b6b84;
+  --border: #e1e7f0;
+  --accent: #2563eb;
+  --accent-ink: #ffffff;
+  --accent-soft: #deeafe;
+  --good: #0d9668;
+  --good-soft: #dbf5ea;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0a1120;
+    --surface: #101a2e;
+    --surface-2: #14203a;
+    --ink: #e7ecf6;
+    --muted: #93a2bc;
+    --border: #223051;
+    --accent: #5b9bff;
+    --accent-ink: #06122b;
+    --accent-soft: rgba(91, 155, 255, 0.14);
+    --good: #34d399;
+    --good-soft: rgba(52, 211, 153, 0.13);
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-jakarta);
+  --font-mono: var(--font-jbmono);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+}

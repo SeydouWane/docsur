@@ -1,0 +1,168 @@
+// Schéma de données DocSur — reflète le dossier de spécifications §6.
+// Le contenu des documents n'est jamais stocké ici : seuls les métadonnées
+// et empreintes le sont. Les fichiers vivent dans le stockage objet (§5).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  COLLABORATEUR
+  INVITE_EXTERNE
+}
+
+enum StatutUtilisateur {
+  ACTIF
+  INVITE
+  SUSPENDU
+}
+
+enum Region {
+  SENEGAL_UEMOA
+  UNION_EUROPEENNE
+}
+
+enum NiveauSignature {
+  SIMPLE
+  AVANCEE
+}
+
+enum StatutSignature {
+  EN_ATTENTE
+  SIGNE
+  REFUSE
+  EXPIRE
+}
+
+model Organisation {
+  id             String     @id @default(cuid())
+  nom            String
+  domaineEmail   String     @unique
+  region         Region     @default(SENEGAL_UEMOA)
+  mfaObligatoire Boolean    @default(true)
+  planTarifaire  String     @default("starter")
+  createdAt      DateTime   @default(now())
+  utilisateurs   Utilisateur[]
+  workspaces     Workspace[]
+}
+
+model Utilisateur {
+  id                    String            @id @default(cuid())
+  email                 String            @unique
+  nom                   String
+  motDePasseHash        String
+  role                  Role              @default(COLLABORATEUR)
+  statut                StatutUtilisateur @default(ACTIF)
+  mfaActif              Boolean           @default(false)
+  organisationId        String
+  organisation          Organisation      @relation(fields: [organisationId], references: [id])
+  workspaces            WorkspaceMembre[]
+  documentsProprietaire Document[]        @relation("proprietaire")
+  journalAudit          JournalAudit[]
+  createdAt             DateTime          @default(now())
+
+  @@index([organisationId])
+}
+
+model Workspace {
+  id             String            @id @default(cuid())
+  nom            String
+  organisationId String
+  organisation   Organisation      @relation(fields: [organisationId], references: [id])
+  retentionJours Int               @default(365)
+  membres        WorkspaceMembre[]
+  documents      Document[]
+  createdAt      DateTime          @default(now())
+
+  @@index([organisationId])
+}
+
+model WorkspaceMembre {
+  id            String      @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace   @relation(fields: [workspaceId], references: [id])
+  utilisateurId String
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id])
+
+  @@unique([workspaceId, utilisateurId])
+}
+
+model Document {
+  id                String             @id @default(cuid())
+  nom               String
+  workspaceId       String
+  workspace         Workspace          @relation(fields: [workspaceId], references: [id])
+  proprietaireId    String
+  proprietaire      Utilisateur        @relation("proprietaire", fields: [proprietaireId], references: [id])
+  empreinteSha256   String
+  tailleOctets      Int
+  datePurgePrevue   DateTime?
+  createdAt         DateTime           @default(now())
+  liensPartage      LienPartage[]
+  demandesSignature DemandeSignature[]
+
+  @@index([workspaceId])
+}
+
+model LienPartage {
+  id                     String    @id @default(cuid())
+  documentId             String
+  document               Document  @relation(fields: [documentId], references: [id])
+  motDePasseHash         String?
+  expireLe               DateTime
+  consultationsMax       Int?
+  consultationsUtilisees Int       @default(0)
+  revoque                Boolean   @default(false)
+  createdAt              DateTime  @default(now())
+
+  @@index([documentId])
+}
+
+// Chaîne de signature open source (DSS + step-ca + horodatage RFC 3161) — voir §5 et §7.
+model DemandeSignature {
+  id                String            @id @default(cuid())
+  documentId        String
+  document          Document          @relation(fields: [documentId], references: [id])
+  niveau            NiveauSignature   @default(SIMPLE)
+  statut            StatutSignature   @default(EN_ATTENTE)
+  certificatId      String?
+  horodatageRfc3161 String?
+  createdAt         DateTime          @default(now())
+  signataires       Signataire[]
+
+  @@index([documentId])
+}
+
+model Signataire {
+  id                  String           @id @default(cuid())
+  demandeSignatureId  String
+  demandeSignature    DemandeSignature @relation(fields: [demandeSignatureId], references: [id])
+  email               String
+  ordre               Int
+  statut              StatutSignature  @default(EN_ATTENTE)
+  signeLe             DateTime?
+
+  @@index([demandeSignatureId])
+}
+
+// Immuable en pratique : n'exposer que des opérations de création côté application.
+model JournalAudit {
+  id          String       @id @default(cuid())
+  acteurId    String?
+  acteur      Utilisateur? @relation(fields: [acteurId], references: [id])
+  action      String
+  documentId  String?
+  adresseIp   String?
+  horodatage  DateTime     @default(now())
+  metadonnees Json?
+
+  @@index([acteurId])
+  @@index([horodatage])
+}
