@@ -91,9 +91,12 @@ Outils fonctionnels à ce stade (pilier 3) :
 | --- | --- |
 | Fusionner, Diviser, Supprimer/Extraire des pages, Réorganiser, Pivoter | Local (`pdf-lib` + aperçu `pdfjs-dist`) |
 | Numéros de page, Filigrane, Rogner | Local, avec aperçu en direct |
-| JPG en PDF, PDF en JPG | Local (rendu `pdfjs-dist`) |
+| JPG en PDF, PDF en JPG, Numériser | Local (rendu `pdfjs-dist`) |
+| Modifier PDF, Formulaires PDF | Local (édition/champs directement sur l'aperçu) |
+| Comparer PDF | Local (diff visuel pixel par pixel) |
+| Censurer PDF | Local (rédaction réelle par rasterisation de la page) |
 | Word/PowerPoint/Excel/HTML en PDF | Serveur, via Gotenberg |
-| Protéger, Déverrouiller, Réparer | Serveur, via qpdf (`apps/pdf-securite`) |
+| Protéger, Déverrouiller, Réparer, Compresser | Serveur, via qpdf (`apps/pdf-securite`) |
 
 Les outils locaux affichent et manipulent le document réellement rendu
 (vignettes `pdfjs-dist`) plutôt que de simples champs texte.
@@ -128,6 +131,8 @@ Pilier 3 (traitement serveur) :
 - `POST /securite-pdf/deverrouiller` — retire le mot de passe d'un PDF.
 - `POST /securite-pdf/reparer` — reconstruit un PDF corrompu (table de
   références manquante ou invalide).
+- `POST /securite-pdf/compresser` — recompresse flux et images (qpdf
+  `--optimize-images --recompress-flate --object-streams=generate`).
 
 Le schéma de données (`prisma/schema.prisma`) reflète le modèle documenté en
 §6 : `Organisation`, `Utilisateur`, `Workspace`, `Document`, `LienPartage`,
@@ -144,7 +149,9 @@ peut être non-nul pour de simples avertissements).
 
 ## Prochaines étapes
 
-Voir §11 du dossier de spécifications. Restent à construire : OCR,
-Numériser, Compresser, Formulaires, Modifier PDF, Signer, Censurer,
-Comparer, et la conversion PDF → Office (Word/PowerPoint/Excel), plus
-délicate que le sens inverse.
+Voir §11 du dossier de spécifications. Restent à construire : OCR, la
+conversion PDF → Office (Word/PowerPoint/Excel — plus délicate que le sens
+inverse), et **Signer** (chaîne DSS + step-ca complète) — volontairement mis
+de côté pour une session dédiée : c'est, à lui seul, un chantier plus vaste
+que tout le reste du pilier 3 réuni (autorité de certification, horodatage
+RFC 3161, PAdES), et le bâcler serait pire que de ne pas l'avoir.

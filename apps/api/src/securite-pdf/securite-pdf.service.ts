@@ -19,6 +19,10 @@ export class SecuritePdfService {
     return this.appeler('/reparer', fichier, {});
   }
 
+  async compresser(fichier: Express.Multer.File): Promise<Buffer> {
+    return this.appeler('/compresser', fichier, {});
+  }
+
   private async appeler(
     chemin: string,
     fichier: Express.Multer.File,

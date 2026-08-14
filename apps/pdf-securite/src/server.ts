@@ -1,6 +1,6 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import multer from "multer";
-import { QpdfError, deverrouiller, proteger, reparer } from "./qpdf";
+import { QpdfError, compresser, deverrouiller, proteger, reparer } from "./qpdf";
 
 const PORT = process.env.PORT ?? 3003;
 const TAILLE_MAX_OCTETS = 50 * 1024 * 1024;
@@ -77,6 +77,21 @@ app.post(
     }
 
     const sortie = await reparer(fichier.buffer);
+    res.set("Content-Type", "application/pdf").send(sortie);
+  }),
+);
+
+app.post(
+  "/compresser",
+  upload.single("fichier"),
+  gestionnaireAsync(async (req, res) => {
+    const fichier = req.file;
+    if (!fichier || !estPdf(fichier.buffer)) {
+      res.status(400).json({ message: "Fichier PDF manquant ou invalide" });
+      return;
+    }
+
+    const sortie = await compresser(fichier.buffer);
     res.set("Content-Type", "application/pdf").send(sortie);
   }),
 );

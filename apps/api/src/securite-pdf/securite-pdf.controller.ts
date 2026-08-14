@@ -90,4 +90,25 @@ export class SecuritePdfController {
     res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="repare.pdf"' });
     res.send(pdf);
   }
+
+  @Post('compresser')
+  @UseInterceptors(FileInterceptor('fichier', { limits: { fileSize: TAILLE_MAX_OCTETS } }))
+  async compresser(
+    @UploadedFile() fichier: Express.Multer.File | undefined,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    if (!fichier) throw new BadRequestException('Fichier manquant');
+
+    const pdf = await this.securite.compresser(fichier);
+
+    await this.audit.enregistrer({
+      action: 'securite_pdf.compresser',
+      adresseIp: req.ip,
+      metadonnees: { nomFichier: fichier.originalname, octetsAvant: fichier.size, octetsApres: pdf.byteLength },
+    });
+
+    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="compresse.pdf"' });
+    res.send(pdf);
+  }
 }

@@ -182,4 +182,9 @@ export const api = {
     formData.append("fichier", fichier);
     return requestBlob("/securite-pdf/reparer", { method: "POST", body: formData });
   },
+  compresserPdf: (fichier: File) => {
+    const formData = new FormData();
+    formData.append("fichier", fichier);
+    return requestBlob("/securite-pdf/compresser", { method: "POST", body: formData });
+  },
 };

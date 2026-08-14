@@ -79,3 +79,19 @@ export async function deverrouiller(donnees: Buffer, motDePasse: string): Promis
 export async function reparer(donnees: Buffer): Promise<Buffer> {
   return executerEtLire((entree, sortie) => [entree, sortie], donnees);
 }
+
+export async function compresser(donnees: Buffer): Promise<Buffer> {
+  return executerEtLire(
+    (entree, sortie) => [
+      "--optimize-images",
+      "--compress-streams=y",
+      "--recompress-flate",
+      "--compression-level=9",
+      "--object-streams=generate",
+      "--",
+      entree,
+      sortie,
+    ],
+    donnees,
+  );
+}
