@@ -61,6 +61,9 @@ model Utilisateur {
   role                  Role              @default(COLLABORATEUR)
   statut                StatutUtilisateur @default(ACTIF)
   mfaActif              Boolean           @default(false)
+  // Pouvoir plateforme, orthogonal au role RBAC (qui reste scope a l'organisation).
+  // Jamais modifiable via une route publique - reserve a une operation manuelle/DB.
+  estSuperAdmin         Boolean           @default(false)
   organisationId        String
   organisation          Organisation      @relation(fields: [organisationId], references: [id])
   workspaces            WorkspaceMembre[]

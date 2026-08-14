@@ -78,6 +78,11 @@ export default function TableauDeBordPage() {
           </h1>
           <p className="mt-1 text-sm text-muted">
             {profil.email} · <span className="font-medium text-ink">{ROLE_LABEL[profil.role]}</span>
+            {profil.estSuperAdmin && (
+              <span className="ml-2 rounded-full bg-good-soft px-2 py-0.5 font-mono text-[11px] text-good">
+                Superadmin DocSur
+              </span>
+            )}
           </p>
         </div>
         <button

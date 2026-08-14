@@ -60,6 +60,7 @@ export type Profil = {
   role: "ADMIN" | "MANAGER" | "COLLABORATEUR" | "INVITE_EXTERNE";
   statut: "ACTIF" | "INVITE" | "SUSPENDU";
   mfaActif: boolean;
+  estSuperAdmin: boolean;
   organisation: { id: string; nom: string; region: string };
 };
 

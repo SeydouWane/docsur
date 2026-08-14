@@ -4,7 +4,12 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Role } from '@prisma/client';
 import type { AuthenticatedUser } from './authenticated-request';
 
-type JwtPayload = { sub: string; organisationId: string; role: Role };
+type JwtPayload = {
+  sub: string;
+  organisationId: string;
+  role: Role;
+  estSuperAdmin: boolean;
+};
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -17,6 +22,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: JwtPayload): AuthenticatedUser {
-    return { userId: payload.sub, organisationId: payload.organisationId, role: payload.role };
+    return {
+      userId: payload.sub,
+      organisationId: payload.organisationId,
+      role: payload.role,
+      estSuperAdmin: payload.estSuperAdmin,
+    };
   }
 }

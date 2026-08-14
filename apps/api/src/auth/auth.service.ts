@@ -68,7 +68,7 @@ export class AuthService {
 
     await this.mail.envoyerBienvenue(utilisateur.email, utilisateur.nom);
 
-    return this.emettreSession(utilisateur.id, utilisateur.organisationId, utilisateur.role);
+    return this.emettreSession(utilisateur);
   }
 
   async login(dto: LoginDto, adresseIp?: string) {
@@ -90,7 +90,7 @@ export class AuthService {
       adresseIp,
     });
 
-    return this.emettreSession(utilisateur.id, utilisateur.organisationId, utilisateur.role);
+    return this.emettreSession(utilisateur);
   }
 
   async profil(userId: string) {
@@ -103,14 +103,25 @@ export class AuthService {
         role: true,
         statut: true,
         mfaActif: true,
+        estSuperAdmin: true,
         organisation: { select: { id: true, nom: true, region: true } },
       },
     });
     return utilisateur;
   }
 
-  private emettreSession(userId: string, organisationId: string, role: Role) {
-    const accessToken = this.jwt.sign({ sub: userId, organisationId, role });
+  private emettreSession(utilisateur: {
+    id: string;
+    organisationId: string;
+    role: Role;
+    estSuperAdmin: boolean;
+  }) {
+    const accessToken = this.jwt.sign({
+      sub: utilisateur.id,
+      organisationId: utilisateur.organisationId,
+      role: utilisateur.role,
+      estSuperAdmin: utilisateur.estSuperAdmin,
+    });
     return { accessToken };
   }
 }
