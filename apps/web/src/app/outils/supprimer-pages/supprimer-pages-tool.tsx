@@ -5,29 +5,42 @@ import { motion, AnimatePresence } from "motion/react";
 import { PDFDocument } from "pdf-lib";
 import { CheckCircle2 } from "lucide-react";
 import { SinglePdfDropzone } from "@/components/single-pdf-dropzone";
-import { parsePageRanges, telechargerBlob, formatTaille } from "@/lib/pdf-page-ranges";
+import { PageThumbnail } from "@/components/page-thumbnail";
+import { usePdfRender } from "@/hooks/use-pdf-render";
+import { telechargerBlob, formatTaille } from "@/lib/pdf-page-ranges";
 
 export function SupprimerPagesTool() {
   const [fichier, setFichier] = useState<File | null>(null);
   const [pageCount, setPageCount] = useState<number | null>(null);
-  const [plages, setPlages] = useState("");
+  const [aSupprimer, setASupprimer] = useState<Set<number>>(new Set());
   const [traitement, setTraitement] = useState(false);
   const [resultat, setResultat] = useState<{ octets: Uint8Array } | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
 
+  const { pages: vignettes, chargement, erreur: erreurRendu } = usePdfRender(fichier, { targetWidth: 200 });
+
   const reinitialiser = () => {
     setFichier(null);
     setPageCount(null);
-    setPlages("");
+    setASupprimer(new Set());
     setResultat(null);
     setErreur(null);
   };
 
+  const basculer = (index: number) => {
+    setASupprimer((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+    setResultat(null);
+  };
+
   const traiter = async () => {
     if (!fichier || !pageCount) return;
-    const aSupprimer = new Set(parsePageRanges(plages, pageCount));
     if (aSupprimer.size === 0) {
-      setErreur("Indiquez au moins une page à supprimer.");
+      setErreur("Sélectionnez au moins une page à supprimer.");
       return;
     }
     if (aSupprimer.size >= pageCount) {
@@ -49,7 +62,7 @@ export function SupprimerPagesTool() {
       const octets = await nouveau.save();
       setResultat({ octets });
     } catch {
-      setErreur("La suppression a échoué — vérifiez le fichier et les pages indiquées.");
+      setErreur("La suppression a échoué — vérifiez le fichier.");
     } finally {
       setTraitement(false);
     }
@@ -63,35 +76,47 @@ export function SupprimerPagesTool() {
         onCharge={(f, p) => {
           setFichier(f);
           setPageCount(p);
+          setASupprimer(new Set());
           setResultat(null);
         }}
         onReinitialiser={reinitialiser}
       />
 
       {fichier && pageCount && (
-        <div className="mt-6">
-          <label className="text-sm font-medium">Pages à supprimer</label>
-          <input
-            value={plages}
-            onChange={(e) => setPlages(e.target.value)}
-            placeholder="Ex. 2, 4, 7-9"
-            className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          />
-          <p className="mt-1 text-xs text-muted">Document de {pageCount} pages.</p>
+        <>
+          <p className="mt-6 text-sm text-muted">
+            Cliquez sur les pages à supprimer.
+            {chargement && " Aperçu en cours de génération…"}
+          </p>
+          {erreurRendu && <p className="mt-2 text-sm text-amber-700">{erreurRendu}</p>}
 
-          {erreur && <p className="mt-2 text-sm text-amber-700">{erreur}</p>}
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            {Array.from({ length: pageCount }, (_, i) => i).map((index) => (
+              <PageThumbnail
+                key={index}
+                label={`Page ${index + 1}`}
+                dataUrl={vignettes.find((v) => v.index === index)?.dataUrl}
+                etat={aSupprimer.has(index) ? "exclu" : "neutre"}
+                onClick={() => basculer(index)}
+              />
+            ))}
+          </div>
+
+          {erreur && <p className="mt-3 text-sm text-amber-700">{erreur}</p>}
 
           <motion.button
             whileHover={{ scale: traitement ? 1 : 1.02 }}
             whileTap={{ scale: traitement ? 1 : 0.98 }}
             type="button"
             onClick={traiter}
-            disabled={traitement || !plages.trim()}
+            disabled={traitement || aSupprimer.size === 0}
             className="mt-4 rounded-lg bg-accent px-5 py-3 text-sm font-medium text-accent-ink disabled:opacity-40"
           >
-            {traitement ? "Suppression en cours…" : "Supprimer les pages"}
+            {traitement
+              ? "Suppression en cours…"
+              : `Supprimer ${aSupprimer.size || ""} page${aSupprimer.size > 1 ? "s" : ""}`}
           </motion.button>
-        </div>
+        </>
       )}
 
       <AnimatePresence>

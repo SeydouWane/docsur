@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, Reorder } from "motion/react";
 import { PDFDocument } from "pdf-lib";
 import { CheckCircle2, Trash2 } from "lucide-react";
 import { SinglePdfDropzone } from "@/components/single-pdf-dropzone";
+import { usePdfRender } from "@/hooks/use-pdf-render";
 import { telechargerBlob, formatTaille } from "@/lib/pdf-page-ranges";
 
 export function ReorganiserTool() {
@@ -15,6 +16,9 @@ export function ReorganiserTool() {
   const [resultat, setResultat] = useState<{ octets: Uint8Array } | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
 
+  const { pages: vignettes, chargement, erreur: erreurRendu } = usePdfRender(fichier, { targetWidth: 220 });
+  const vignetteParIndex = new Map(vignettes.map((v) => [v.index, v]));
+
   const reinitialiser = () => {
     setFichier(null);
     setPageCount(null);
@@ -23,18 +27,8 @@ export function ReorganiserTool() {
     setErreur(null);
   };
 
-  const move = (index: number, direction: -1 | 1) => {
-    setOrdre((prev) => {
-      const next = [...prev];
-      const cible = index + direction;
-      if (cible < 0 || cible >= next.length) return prev;
-      [next[index], next[cible]] = [next[cible], next[index]];
-      return next;
-    });
-  };
-
-  const retirer = (index: number) => {
-    setOrdre((prev) => prev.filter((_, i) => i !== index));
+  const retirer = (pageIndex: number) => {
+    setOrdre((prev) => prev.filter((i) => i !== pageIndex));
   };
 
   const traiter = async () => {
@@ -74,52 +68,54 @@ export function ReorganiserTool() {
 
       {fichier && pageCount && (
         <>
-          <ul className="mt-6 space-y-2">
-            <AnimatePresence initial={false}>
-              {ordre.map((pageIndex, position) => (
-                <motion.li
+          <p className="mt-6 text-sm text-muted">
+            Glissez les pages pour changer leur ordre.
+            {chargement && " Aperçu en cours de génération…"}
+          </p>
+          {erreurRendu && <p className="mt-2 text-sm text-amber-700">{erreurRendu}</p>}
+
+          <Reorder.Group
+            axis="x"
+            values={ordre}
+            onReorder={setOrdre}
+            className="mt-4 flex gap-3 overflow-x-auto pb-3"
+          >
+            {ordre.map((pageIndex, position) => {
+              const vignette = vignetteParIndex.get(pageIndex);
+              return (
+                <Reorder.Item
                   key={pageIndex}
-                  layout
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: 24 }}
-                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3"
+                  value={pageIndex}
+                  className="relative shrink-0 cursor-grab select-none active:cursor-grabbing"
+                  whileDrag={{ scale: 1.05, zIndex: 10, boxShadow: "0 8px 24px rgba(15,23,42,0.18)" }}
                 >
-                  <span className="font-mono text-xs text-muted">{position + 1}</span>
-                  <span className="flex-1 text-sm font-medium">Page {pageIndex + 1}</span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      aria-label="Monter"
-                      onClick={() => move(position, -1)}
-                      disabled={position === 0}
-                      className="rounded-md border border-border px-2 py-1 text-xs text-muted hover:text-ink disabled:opacity-30"
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Descendre"
-                      onClick={() => move(position, 1)}
-                      disabled={position === ordre.length - 1}
-                      className="rounded-md border border-border px-2 py-1 text-xs text-muted hover:text-ink disabled:opacity-30"
-                    >
-                      ↓
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Retirer cette page"
-                      onClick={() => retirer(position)}
-                      className="rounded-md border border-border p-1.5 text-muted hover:text-red-500"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                  <div className="w-[140px] overflow-hidden rounded-lg border border-border bg-surface">
+                    <div className="flex h-[180px] items-center justify-center bg-surface-2">
+                      {vignette ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- aperçu genere localement (canvas), pas une URL distante
+                        <img src={vignette.dataUrl} alt={`Page ${pageIndex + 1}`} className="max-h-full max-w-full" draggable={false} />
+                      ) : (
+                        <div className="h-6 w-6 animate-pulse rounded-full bg-border" />
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between px-2 py-1.5">
+                      <span className="font-mono text-xs text-muted">
+                        {position + 1} · p.{pageIndex + 1}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={`Retirer la page ${pageIndex + 1}`}
+                        onClick={() => retirer(pageIndex)}
+                        className="text-muted hover:text-red-500"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </div>
-                </motion.li>
-              ))}
-            </AnimatePresence>
-          </ul>
+                </Reorder.Item>
+              );
+            })}
+          </Reorder.Group>
 
           {erreur && <p className="mt-2 text-sm text-amber-700">{erreur}</p>}
 

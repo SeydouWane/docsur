@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { PDFDocument, StandardFonts, rgb, degrees } from "pdf-lib";
 import { CheckCircle2 } from "lucide-react";
 import { SinglePdfDropzone } from "@/components/single-pdf-dropzone";
+import { usePdfRender } from "@/hooks/use-pdf-render";
 import { telechargerBlob, formatTaille } from "@/lib/pdf-page-ranges";
 
 export function FiligraneTool() {
@@ -17,6 +18,9 @@ export function FiligraneTool() {
   const [traitement, setTraitement] = useState(false);
   const [resultat, setResultat] = useState<{ octets: Uint8Array } | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+
+  const { pages: apercu, chargement } = usePdfRender(fichier, { targetWidth: 360, pages: [0] });
+  const pageApercu = apercu[0];
 
   const reinitialiser = () => {
     setFichier(null);
@@ -78,17 +82,43 @@ export function FiligraneTool() {
       />
 
       {fichier && (
-        <div className="mt-6 space-y-4">
-          <label className="block text-sm">
-            <span className="mb-1.5 block font-medium">Texte</span>
-            <input
-              value={texte}
-              onChange={(e) => setTexte(e.target.value)}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            />
-          </label>
+        <div className="mt-6 grid gap-6 md:grid-cols-[1fr_260px]">
+          <div className="relative flex items-center justify-center overflow-hidden rounded-lg border border-border bg-surface-2">
+            {pageApercu ? (
+              <div className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element -- aperçu genere localement (canvas) */}
+                <img src={pageApercu.dataUrl} alt="Aperçu de la première page" className="block" />
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
+                  <span
+                    className="whitespace-nowrap font-bold"
+                    style={{
+                      fontSize: taille * (pageApercu.width / 595),
+                      opacity: opacite,
+                      color: "rgb(102,115,140)",
+                      transform: `rotate(${-rotation}deg)`,
+                    }}
+                  >
+                    {texte || " "}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex h-64 w-full items-center justify-center">
+                <div className="h-6 w-6 animate-pulse rounded-full bg-border" />
+              </div>
+            )}
+            {chargement && <p className="absolute bottom-2 left-2 text-xs text-muted">Aperçu…</p>}
+          </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="space-y-4">
+            <label className="block text-sm">
+              <span className="mb-1.5 block font-medium">Texte</span>
+              <input
+                value={texte}
+                onChange={(e) => setTexte(e.target.value)}
+                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              />
+            </label>
             <label className="block text-sm">
               <span className="mb-1.5 block font-medium">Taille</span>
               <input
@@ -123,20 +153,20 @@ export function FiligraneTool() {
                 className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
               />
             </label>
+
+            {erreur && <p className="text-sm text-amber-700">{erreur}</p>}
+
+            <motion.button
+              whileHover={{ scale: traitement ? 1 : 1.02 }}
+              whileTap={{ scale: traitement ? 1 : 0.98 }}
+              type="button"
+              onClick={traiter}
+              disabled={traitement || !texte.trim()}
+              className="w-full rounded-lg bg-accent px-5 py-3 text-sm font-medium text-accent-ink disabled:opacity-40"
+            >
+              {traitement ? "Application…" : "Ajouter le filigrane"}
+            </motion.button>
           </div>
-
-          {erreur && <p className="text-sm text-amber-700">{erreur}</p>}
-
-          <motion.button
-            whileHover={{ scale: traitement ? 1 : 1.02 }}
-            whileTap={{ scale: traitement ? 1 : 0.98 }}
-            type="button"
-            onClick={traiter}
-            disabled={traitement || !texte.trim()}
-            className="rounded-lg bg-accent px-5 py-3 text-sm font-medium text-accent-ink disabled:opacity-40"
-          >
-            {traitement ? "Application…" : "Ajouter le filigrane"}
-          </motion.button>
         </div>
       )}
 

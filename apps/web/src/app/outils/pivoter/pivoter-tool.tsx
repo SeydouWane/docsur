@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { PDFDocument, degrees } from "pdf-lib";
 import { CheckCircle2, RotateCcw, RotateCw } from "lucide-react";
 import { SinglePdfDropzone } from "@/components/single-pdf-dropzone";
+import { usePdfRender } from "@/hooks/use-pdf-render";
 import { telechargerBlob, formatTaille } from "@/lib/pdf-page-ranges";
 
 function normaliser(angle: number): number {
@@ -19,6 +20,8 @@ export function PivoterTool() {
   const [resultat, setResultat] = useState<{ octets: Uint8Array } | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
 
+  const { pages: vignettes, chargement, erreur: erreurRendu } = usePdfRender(fichier, { targetWidth: 200 });
+
   const reinitialiser = () => {
     setFichier(null);
     setPageCount(null);
@@ -29,10 +32,12 @@ export function PivoterTool() {
 
   const pivoterPage = (index: number, delta: number) => {
     setRotations((prev) => prev.map((r, i) => (i === index ? normaliser(r + delta) : r)));
+    setResultat(null);
   };
 
   const pivoterTout = (delta: number) => {
     setRotations((prev) => prev.map((r) => normaliser(r + delta)));
+    setResultat(null);
   };
 
   const traiter = async () => {
@@ -77,58 +82,78 @@ export function PivoterTool() {
       {fichier && pageCount && (
         <>
           <div className="mt-6 flex items-center justify-between">
-            <p className="text-sm text-muted">Pivoter toutes les pages :</p>
-            <div className="flex gap-2">
+            <p className="text-sm text-muted">
+              Pivotez chaque page individuellement, ou toutes à la fois.
+              {chargement && " Aperçu en cours de génération…"}
+            </p>
+            <div className="flex shrink-0 gap-2">
               <button
                 type="button"
                 onClick={() => pivoterTout(-90)}
                 className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-muted hover:text-ink"
               >
-                <RotateCcw size={13} /> -90°
+                <RotateCcw size={13} /> Tout
               </button>
               <button
                 type="button"
                 onClick={() => pivoterTout(90)}
                 className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-muted hover:text-ink"
               >
-                <RotateCw size={13} /> +90°
+                <RotateCw size={13} /> Tout
               </button>
             </div>
           </div>
+          {erreurRendu && <p className="mt-2 text-sm text-amber-700">{erreurRendu}</p>}
 
-          <ul className="mt-3 space-y-2">
-            {rotations.map((angle, i) => (
-              <li
-                key={i}
-                className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 text-sm"
-              >
-                <span>
-                  Page {i + 1}
-                  {angle !== 0 && <span className="ml-2 font-mono text-xs text-accent">{angle}°</span>}
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    aria-label={`Pivoter la page ${i + 1} vers la gauche`}
-                    onClick={() => pivoterPage(i, -90)}
-                    className="rounded-md border border-border p-1.5 text-muted hover:text-ink"
-                  >
-                    <RotateCcw size={13} />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`Pivoter la page ${i + 1} vers la droite`}
-                    onClick={() => pivoterPage(i, 90)}
-                    className="rounded-md border border-border p-1.5 text-muted hover:text-ink"
-                  >
-                    <RotateCw size={13} />
-                  </button>
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            {rotations.map((angle, index) => {
+              const vignette = vignettes.find((v) => v.index === index);
+              return (
+                <div key={index} className="overflow-hidden rounded-lg border border-border bg-surface">
+                  <div className="flex h-[170px] items-center justify-center overflow-hidden bg-surface-2">
+                    {vignette ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- aperçu genere localement (canvas)
+                      <img
+                        src={vignette.dataUrl}
+                        alt={`Page ${index + 1}`}
+                        className="max-h-[85%] max-w-[85%] transition-transform duration-200"
+                        style={{ transform: `rotate(${angle}deg)` }}
+                        draggable={false}
+                      />
+                    ) : (
+                      <div className="h-6 w-6 animate-pulse rounded-full bg-border" />
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between px-2 py-1.5">
+                    <span className="font-mono text-xs text-muted">
+                      Page {index + 1}
+                      {angle !== 0 && <span className="ml-1 text-accent">· {angle}°</span>}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        aria-label={`Pivoter la page ${index + 1} vers la gauche`}
+                        onClick={() => pivoterPage(index, -90)}
+                        className="rounded-md p-1 text-muted hover:text-ink"
+                      >
+                        <RotateCcw size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Pivoter la page ${index + 1} vers la droite`}
+                        onClick={() => pivoterPage(index, 90)}
+                        className="rounded-md p-1 text-muted hover:text-ink"
+                      >
+                        <RotateCw size={13} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </li>
-            ))}
-          </ul>
+              );
+            })}
+          </div>
 
-          {erreur && <p className="mt-2 text-sm text-amber-700">{erreur}</p>}
+          {erreur && <p className="mt-3 text-sm text-amber-700">{erreur}</p>}
 
           <motion.button
             whileHover={{ scale: traitement ? 1 : 1.02 }}

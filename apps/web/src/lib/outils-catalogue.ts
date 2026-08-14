@@ -189,10 +189,10 @@ export const categories: Categorie[] = [
       {
         slug: "pdf-vers-jpg",
         nom: "PDF en JPG",
-        description: "Exporter chaque page, ou les images, en fichiers JPG.",
+        description: "Exporter chaque page en fichier JPG.",
         icon: FileImage,
-        traitement: "serveur",
-        statut: "bientot",
+        traitement: "local",
+        statut: "disponible",
       },
       {
         slug: "pdf-vers-word",

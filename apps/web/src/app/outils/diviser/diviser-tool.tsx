@@ -4,44 +4,47 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { PDFDocument } from "pdf-lib";
 import { zipSync } from "fflate";
-import { CheckCircle2, FileDown } from "lucide-react";
+import { CheckCircle2, FileDown, Plus } from "lucide-react";
 import { SinglePdfDropzone } from "@/components/single-pdf-dropzone";
-import { parsePageRanges, telechargerBlob, formatTaille } from "@/lib/pdf-page-ranges";
+import { usePdfRender } from "@/hooks/use-pdf-render";
+import { telechargerBlob, formatTaille } from "@/lib/pdf-page-ranges";
 
 type Resultat = { nom: string; octets: Uint8Array };
 
 export function DiviserTool() {
   const [fichier, setFichier] = useState<File | null>(null);
   const [pageCount, setPageCount] = useState<number | null>(null);
-  const [plages, setPlages] = useState("");
+  // affectation[i] = numero de groupe (0-based) de la page i.
+  const [affectation, setAffectation] = useState<number[]>([]);
+  const [groupeActif, setGroupeActif] = useState(0);
   const [traitement, setTraitement] = useState(false);
   const [resultats, setResultats] = useState<Resultat[] | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
 
+  const { pages: vignettes, chargement, erreur: erreurRendu } = usePdfRender(fichier, { targetWidth: 200 });
+
   const reinitialiser = () => {
     setFichier(null);
     setPageCount(null);
-    setPlages("");
+    setAffectation([]);
+    setGroupeActif(0);
     setResultats(null);
     setErreur(null);
   };
 
-  const remplirChaquePage = () => {
-    if (!pageCount) return;
-    setPlages(Array.from({ length: pageCount }, (_, i) => i + 1).join("\n"));
+  const nbGroupes = affectation.length > 0 ? Math.max(...affectation) + 1 : 1;
+
+  const assigner = (index: number) => {
+    setAffectation((prev) => prev.map((g, i) => (i === index ? groupeActif : g)));
+    setResultats(null);
+  };
+
+  const nouveauGroupe = () => {
+    setGroupeActif(nbGroupes);
   };
 
   const diviser = async () => {
     if (!fichier || !pageCount) return;
-    const lignes = plages
-      .split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean);
-    if (lignes.length === 0) {
-      setErreur("Indiquez au moins une plage de pages (une par ligne).");
-      return;
-    }
-
     setTraitement(true);
     setErreur(null);
     setResultats(null);
@@ -50,23 +53,27 @@ export function DiviserTool() {
       const source = await PDFDocument.load(bytes, { ignoreEncryption: true });
       const sorties: Resultat[] = [];
 
-      for (let i = 0; i < lignes.length; i++) {
-        const indices = parsePageRanges(lignes[i], pageCount);
+      for (let g = 0; g < nbGroupes; g++) {
+        const indices = affectation
+          .map((groupe, index) => ({ groupe, index }))
+          .filter((p) => p.groupe === g)
+          .map((p) => p.index);
         if (indices.length === 0) continue;
+
         const nouveau = await PDFDocument.create();
         const pages = await nouveau.copyPages(source, indices);
         pages.forEach((p) => nouveau.addPage(p));
         const octets = await nouveau.save();
-        sorties.push({ nom: `partie-${i + 1}.pdf`, octets });
+        sorties.push({ nom: `partie-${sorties.length + 1}.pdf`, octets });
       }
 
       if (sorties.length === 0) {
-        setErreur("Aucune page valide dans les plages indiquées.");
+        setErreur("Aucune page assignée à un groupe.");
         return;
       }
       setResultats(sorties);
     } catch {
-      setErreur("La division a échoué — vérifiez le fichier et les plages indiquées.");
+      setErreur("La division a échoué — vérifiez le fichier.");
     } finally {
       setTraitement(false);
     }
@@ -88,41 +95,85 @@ export function DiviserTool() {
         onCharge={(f, p) => {
           setFichier(f);
           setPageCount(p);
+          setAffectation(Array.from({ length: p }, () => 0));
+          setGroupeActif(0);
           setResultats(null);
         }}
         onReinitialiser={reinitialiser}
       />
 
       {fichier && pageCount && (
-        <div className="mt-6">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">Une plage par ligne (ex. 1-3)</label>
-            <button type="button" onClick={remplirChaquePage} className="text-sm text-accent">
-              Une page par fichier
+        <>
+          <div className="mt-6 flex flex-wrap items-center gap-2">
+            <span className="text-sm text-muted">Groupe actif :</span>
+            {Array.from({ length: nbGroupes }, (_, g) => g).map((g) => (
+              <button
+                key={g}
+                type="button"
+                onClick={() => setGroupeActif(g)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  groupeActif === g ? "bg-accent text-accent-ink" : "border border-border text-muted hover:text-ink"
+                }`}
+              >
+                Fichier {g + 1}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={nouveauGroupe}
+              className="flex items-center gap-1 rounded-full border border-dashed border-border px-3 py-1 text-xs text-muted hover:text-ink"
+            >
+              <Plus size={12} /> Nouveau fichier
             </button>
           </div>
-          <textarea
-            value={plages}
-            onChange={(e) => setPlages(e.target.value)}
-            rows={5}
-            placeholder={`1-3\n4-6\n7-${pageCount}`}
-            className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          />
-          <p className="mt-1 text-xs text-muted">Document de {pageCount} pages.</p>
+          <p className="mt-2 text-sm text-muted">
+            Cliquez sur les pages pour les assigner au groupe actif.
+            {chargement && " Aperçu en cours de génération…"}
+          </p>
+          {erreurRendu && <p className="mt-2 text-sm text-amber-700">{erreurRendu}</p>}
 
-          {erreur && <p className="mt-2 text-sm text-amber-700">{erreur}</p>}
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            {affectation.map((groupe, index) => {
+              const vignette = vignettes.find((v) => v.index === index);
+              return (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => assigner(index)}
+                  className="w-full overflow-hidden rounded-lg border border-border bg-surface text-left transition-colors hover:border-accent/40"
+                >
+                  <div className="flex h-[170px] items-center justify-center bg-surface-2">
+                    {vignette ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- aperçu genere localement (canvas)
+                      <img src={vignette.dataUrl} alt={`Page ${index + 1}`} className="max-h-full max-w-full" draggable={false} />
+                    ) : (
+                      <div className="h-6 w-6 animate-pulse rounded-full bg-border" />
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between px-2 py-1.5">
+                    <span className="font-mono text-xs text-muted">Page {index + 1}</span>
+                    <span className="rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[11px] text-accent">
+                      Fichier {groupe + 1}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {erreur && <p className="mt-3 text-sm text-amber-700">{erreur}</p>}
 
           <motion.button
             whileHover={{ scale: traitement ? 1 : 1.02 }}
             whileTap={{ scale: traitement ? 1 : 0.98 }}
             type="button"
             onClick={diviser}
-            disabled={traitement || !plages.trim()}
+            disabled={traitement}
             className="mt-4 rounded-lg bg-accent px-5 py-3 text-sm font-medium text-accent-ink disabled:opacity-40"
           >
             {traitement ? "Division en cours…" : "Diviser le PDF"}
           </motion.button>
-        </div>
+        </>
       )}
 
       <AnimatePresence>

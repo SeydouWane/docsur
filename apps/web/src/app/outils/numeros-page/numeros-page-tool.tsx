@@ -5,18 +5,19 @@ import { motion, AnimatePresence } from "motion/react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { CheckCircle2 } from "lucide-react";
 import { SinglePdfDropzone } from "@/components/single-pdf-dropzone";
+import { usePdfRender } from "@/hooks/use-pdf-render";
 import { telechargerBlob, formatTaille } from "@/lib/pdf-page-ranges";
 
 type Position = "bas-centre" | "bas-droite" | "bas-gauche" | "haut-centre" | "haut-droite" | "haut-gauche";
 type Format = "n" | "n-total" | "page-n" | "page-n-total";
 
-const POSITIONS: { value: Position; label: string }[] = [
-  { value: "bas-centre", label: "Bas, centré" },
-  { value: "bas-droite", label: "Bas, à droite" },
-  { value: "bas-gauche", label: "Bas, à gauche" },
-  { value: "haut-centre", label: "Haut, centré" },
-  { value: "haut-droite", label: "Haut, à droite" },
-  { value: "haut-gauche", label: "Haut, à gauche" },
+const POSITIONS: { value: Position; label: string; classes: string }[] = [
+  { value: "bas-centre", label: "Bas, centré", classes: "items-end justify-center" },
+  { value: "bas-droite", label: "Bas, à droite", classes: "items-end justify-end" },
+  { value: "bas-gauche", label: "Bas, à gauche", classes: "items-end justify-start" },
+  { value: "haut-centre", label: "Haut, centré", classes: "items-start justify-center" },
+  { value: "haut-droite", label: "Haut, à droite", classes: "items-start justify-end" },
+  { value: "haut-gauche", label: "Haut, à gauche", classes: "items-start justify-start" },
 ];
 
 const FORMATS: { value: Format; label: string; exemple: string }[] = [
@@ -49,6 +50,9 @@ export function NumerosPageTool() {
   const [traitement, setTraitement] = useState(false);
   const [resultat, setResultat] = useState<{ octets: Uint8Array } | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+
+  const { pages: apercu, chargement } = usePdfRender(fichier, { targetWidth: 360, pages: [0] });
+  const pageApercu = apercu[0];
 
   const reinitialiser = () => {
     setFichier(null);
@@ -91,6 +95,9 @@ export function NumerosPageTool() {
     }
   };
 
+  const positionActuelle = POSITIONS.find((p) => p.value === position)!;
+  const texteExemple = pageCount ? formaterNumero(format, depart, depart + pageCount - 1) : "";
+
   return (
     <div>
       <SinglePdfDropzone
@@ -105,8 +112,30 @@ export function NumerosPageTool() {
       />
 
       {fichier && pageCount && (
-        <div className="mt-6 space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
+        <div className="mt-6 grid gap-6 md:grid-cols-[1fr_260px]">
+          <div className="relative flex items-center justify-center overflow-hidden rounded-lg border border-border bg-surface-2">
+            {pageApercu ? (
+              <div className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element -- aperçu genere localement (canvas) */}
+                <img src={pageApercu.dataUrl} alt="Aperçu de la première page" className="block" />
+                <div className={`absolute inset-0 flex p-3 ${positionActuelle.classes}`}>
+                  <span
+                    className="rounded bg-accent px-1.5 py-0.5 font-mono text-accent-ink shadow-sm"
+                    style={{ fontSize: Math.max(9, taillePolice * 0.85) }}
+                  >
+                    {texteExemple}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex h-64 w-full items-center justify-center">
+                <div className="h-6 w-6 animate-pulse rounded-full bg-border" />
+              </div>
+            )}
+            {chargement && <p className="absolute bottom-2 left-2 text-xs text-muted">Aperçu…</p>}
+          </div>
+
+          <div className="space-y-4">
             <label className="block text-sm">
               <span className="mb-1.5 block font-medium">Position</span>
               <select
@@ -135,41 +164,43 @@ export function NumerosPageTool() {
                 ))}
               </select>
             </label>
-            <label className="block text-sm">
-              <span className="mb-1.5 block font-medium">Commencer à</span>
-              <input
-                type="number"
-                min={0}
-                value={depart}
-                onChange={(e) => setDepart(Number(e.target.value) || 1)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="mb-1.5 block font-medium">Taille du texte</span>
-              <input
-                type="number"
-                min={6}
-                max={24}
-                value={taillePolice}
-                onChange={(e) => setTaillePolice(Number(e.target.value) || 10)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              />
-            </label>
+            <div className="grid grid-cols-2 gap-4">
+              <label className="block text-sm">
+                <span className="mb-1.5 block font-medium">Commencer à</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={depart}
+                  onChange={(e) => setDepart(Number(e.target.value) || 1)}
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1.5 block font-medium">Taille</span>
+                <input
+                  type="number"
+                  min={6}
+                  max={24}
+                  value={taillePolice}
+                  onChange={(e) => setTaillePolice(Number(e.target.value) || 10)}
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                />
+              </label>
+            </div>
+
+            {erreur && <p className="text-sm text-amber-700">{erreur}</p>}
+
+            <motion.button
+              whileHover={{ scale: traitement ? 1 : 1.02 }}
+              whileTap={{ scale: traitement ? 1 : 0.98 }}
+              type="button"
+              onClick={traiter}
+              disabled={traitement}
+              className="w-full rounded-lg bg-accent px-5 py-3 text-sm font-medium text-accent-ink disabled:opacity-40"
+            >
+              {traitement ? "Application…" : "Ajouter les numéros"}
+            </motion.button>
           </div>
-
-          {erreur && <p className="text-sm text-amber-700">{erreur}</p>}
-
-          <motion.button
-            whileHover={{ scale: traitement ? 1 : 1.02 }}
-            whileTap={{ scale: traitement ? 1 : 0.98 }}
-            type="button"
-            onClick={traiter}
-            disabled={traitement}
-            className="rounded-lg bg-accent px-5 py-3 text-sm font-medium text-accent-ink disabled:opacity-40"
-          >
-            {traitement ? "Application…" : "Ajouter les numéros"}
-          </motion.button>
         </div>
       )}
 
