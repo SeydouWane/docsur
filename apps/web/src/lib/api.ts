@@ -187,4 +187,12 @@ export const api = {
     formData.append("fichier", fichier);
     return requestBlob("/securite-pdf/compresser", { method: "POST", body: formData });
   },
+
+  // OCR — pilier 3, traitement serveur éphémère (ocrmypdf + Tesseract).
+  ocrPdf: (fichier: File, langue: "fra" | "eng" | "fra+eng") => {
+    const formData = new FormData();
+    formData.append("fichier", fichier);
+    formData.append("langue", langue);
+    return requestBlob("/ocr", { method: "POST", body: formData });
+  },
 };

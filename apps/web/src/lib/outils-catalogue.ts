@@ -130,7 +130,7 @@ export const categories: Categorie[] = [
         description: "Rendre un PDF scanné sélectionnable, copiable et indexable.",
         icon: ScanText,
         traitement: "serveur",
-        statut: "bientot",
+        statut: "disponible",
       },
     ],
   },

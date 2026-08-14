@@ -11,6 +11,7 @@ import { UtilisateursModule } from './utilisateurs/utilisateurs.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 import { ConversionsModule } from './conversions/conversions.module';
 import { SecuritePdfModule } from './securite-pdf/securite-pdf.module';
+import { OcrModule } from './ocr/ocr.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { SecuritePdfModule } from './securite-pdf/securite-pdf.module';
     WorkspacesModule,
     ConversionsModule,
     SecuritePdfModule,
+    OcrModule,
   ],
   controllers: [AppController],
   providers: [AppService],

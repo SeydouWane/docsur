@@ -22,6 +22,10 @@ modèle de données, sécurité et conformité.
 - **Chiffrement/réparation de PDF** : [qpdf](https://qpdf.readthedocs.io/)
   (bibliothèque C++ de référence) dans un microservice dédié — `pdf-lib` n'a
   pas de fonction de chiffrement fiable, et qpdf couvre aussi la réparation.
+- **OCR** : [ocrmypdf](https://ocrmypdf.readthedocs.io/) + Tesseract (français
+  et anglais) dans un microservice dédié — ajoute une couche de texte
+  invisible par-dessus le rendu original des pages, sans jamais modifier
+  l'apparence du document.
 
 ## Structure du dépôt
 
@@ -30,8 +34,9 @@ apps/
   web/           Next.js (App Router, TS, Tailwind, motion) — landing,
                  catalogue d'outils et outils PDF côté navigateur ou via l'API
   api/           NestJS + Prisma — enrôlement, RBAC, journal d'audit, email,
-                 conversions, sécurité PDF
-  pdf-securite/  Microservice Express + qpdf — protéger/déverrouiller/réparer
+                 conversions, sécurité PDF, OCR
+  pdf-securite/  Microservice Express + qpdf — protéger/déverrouiller/réparer/compresser
+  pdf-ocr/       Microservice Express + ocrmypdf/Tesseract — OCR
 docs/
   specifications.html   Dossier de spécifications
 ```
@@ -46,13 +51,19 @@ docs/
    ```bash
    docker run -d --name aegis-gotenberg -p 3002:3000 gotenberg/gotenberg:8
    ```
-3. **pdf-securite** (Docker, protéger/déverrouiller/réparer) :
+3. **pdf-securite** (Docker, protéger/déverrouiller/réparer/compresser) :
    ```bash
    cd apps/pdf-securite
    docker build -t aegis-pdf-securite .
    docker run -d --name aegis-pdf-securite -p 3003:3003 aegis-pdf-securite
    ```
-4. **API** :
+4. **pdf-ocr** (Docker, OCR — construction plus longue : installe Tesseract) :
+   ```bash
+   cd apps/pdf-ocr
+   docker build -t aegis-pdf-ocr .
+   docker run -d --name aegis-pdf-ocr -p 3004:3004 aegis-pdf-ocr
+   ```
+5. **API** :
    ```bash
    cd apps/api
    npm install
@@ -64,7 +75,7 @@ docs/
    Sous Windows, `npm run start:dev` (mode watch) plante parfois à cause d'un
    bug connu de `@nestjs/cli` (tree-kill) — `npm run build` puis `node dist/main.js`
    est plus fiable ; à relancer manuellement après chaque modification.
-5. **Web**, dans un autre terminal :
+6. **Web**, dans un autre terminal :
    ```bash
    cd apps/web
    npm install
@@ -97,6 +108,7 @@ Outils fonctionnels à ce stade (pilier 3) :
 | Censurer PDF | Local (rédaction réelle par rasterisation de la page) |
 | Word/PowerPoint/Excel/HTML en PDF | Serveur, via Gotenberg |
 | Protéger, Déverrouiller, Réparer, Compresser | Serveur, via qpdf (`apps/pdf-securite`) |
+| OCR PDF | Serveur, via ocrmypdf/Tesseract (`apps/pdf-ocr`) |
 
 Les outils locaux affichent et manipulent le document réellement rendu
 (vignettes `pdfjs-dist`) plutôt que de simples champs texte.
@@ -133,6 +145,9 @@ Pilier 3 (traitement serveur) :
   références manquante ou invalide).
 - `POST /securite-pdf/compresser` — recompresse flux et images (qpdf
   `--optimize-images --recompress-flate --object-streams=generate`).
+- `POST /ocr` — ajoute une couche de texte reconnu sous chaque page scannée
+  (français/anglais, au choix), via `apps/pdf-ocr` (ocrmypdf/Tesseract) ;
+  les pages contenant déjà du texte sont laissées intactes (`--skip-text`).
 
 Le schéma de données (`prisma/schema.prisma`) reflète le modèle documenté en
 §6 : `Organisation`, `Utilisateur`, `Workspace`, `Document`, `LienPartage`,
@@ -147,11 +162,22 @@ rien ne persiste entre deux requêtes. Le verdict de réussite se base sur la
 présence du fichier de sortie plutôt que sur le code de sortie de qpdf (qui
 peut être non-nul pour de simples avertissements).
 
+## apps/pdf-ocr
+
+Microservice Express minimal (voir `apps/pdf-ocr/src/ocrmypdf.ts`), même
+principe que `apps/pdf-securite` : dossier temporaire unique par requête,
+supprimé immédiatement après. Appelle `ocrmypdf` avec `--skip-text` (les
+pages qui ont déjà du texte sont laissées intactes) et `--optimize 0` (la
+compression est le travail de l'outil Compresser, pas de celui-ci) ;
+l'image Docker installe Tesseract avec les paquets de langue français et
+anglais.
+
 ## Prochaines étapes
 
-Voir §11 du dossier de spécifications. Restent à construire : OCR, la
-conversion PDF → Office (Word/PowerPoint/Excel — plus délicate que le sens
-inverse), et **Signer** (chaîne DSS + step-ca complète) — volontairement mis
-de côté pour une session dédiée : c'est, à lui seul, un chantier plus vaste
-que tout le reste du pilier 3 réuni (autorité de certification, horodatage
-RFC 3161, PAdES), et le bâcler serait pire que de ne pas l'avoir.
+Voir §11 du dossier de spécifications. Reste à construire : la conversion
+PDF → Office (Word/PowerPoint/Excel — plus délicate que le sens inverse, que
+Gotenberg ne couvre pas), et **Signer** (chaîne DSS + step-ca complète) —
+volontairement mis de côté pour une session dédiée : c'est, à lui seul, un
+chantier plus vaste que tout le reste du pilier 3 réuni (autorité de
+certification, horodatage RFC 3161, PAdES), et le bâcler serait pire que de
+ne pas l'avoir.
