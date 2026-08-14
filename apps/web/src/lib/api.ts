@@ -61,7 +61,13 @@ export type Profil = {
   statut: "ACTIF" | "INVITE" | "SUSPENDU";
   mfaActif: boolean;
   estSuperAdmin: boolean;
-  organisation: { id: string; nom: string; region: string };
+  organisation: {
+    id: string;
+    nom: string;
+    region: string;
+    type: "ENTREPRISE" | "INDIVIDUEL";
+    statut: "ACTIVE" | "DESACTIVEE";
+  };
 };
 
 export type DocumentMeta = {
@@ -73,11 +79,58 @@ export type DocumentMeta = {
   workspace: { id: string; nom: string };
 };
 
+export type Membre = {
+  id: string;
+  email: string;
+  nom: string;
+  role: Profil["role"];
+  statut: Profil["statut"];
+  createdAt: string;
+};
+
+export type Workspace = {
+  id: string;
+  nom: string;
+  retentionJours: number;
+  createdAt: string;
+  _count: { membres: number; documents: number };
+};
+
+export type Organisation = {
+  id: string;
+  nom: string;
+  domaineEmail: string;
+  type: "ENTREPRISE" | "INDIVIDUEL";
+  statut: "ACTIVE" | "DESACTIVEE";
+  region: string;
+  planTarifaire: string;
+  createdAt: string;
+  _count: { utilisateurs: number; workspaces: number };
+};
+
 export const api = {
-  inscription: (dto: { email: string; motDePasse: string; nom: string }) =>
+  inscription: (dto: { email: string; motDePasse: string; nom: string; individuel?: boolean }) =>
     request<Session>("/auth/inscription", { method: "POST", body: JSON.stringify(dto) }),
   connexion: (dto: { email: string; motDePasse: string }) =>
     request<Session>("/auth/connexion", { method: "POST", body: JSON.stringify(dto) }),
   moi: () => request<Profil>("/auth/moi"),
   documents: () => request<DocumentMeta[]>("/documents"),
+
+  // Admin — gestion des collaborateurs de sa propre organisation.
+  membres: () => request<Membre[]>("/utilisateurs"),
+  changerStatutMembre: (id: string, statut: "ACTIF" | "SUSPENDU") =>
+    request<Membre>(`/utilisateurs/${id}/statut`, { method: "PATCH", body: JSON.stringify({ statut }) }),
+
+  // Admin — démembrements (équipes) de l'organisation.
+  workspaces: () => request<Workspace[]>("/workspaces"),
+  creerWorkspace: (nom: string) =>
+    request<Workspace>("/workspaces", { method: "POST", body: JSON.stringify({ nom }) }),
+
+  // Superadmin — vue plateforme.
+  organisations: () => request<Organisation[]>("/organisations"),
+  changerStatutOrganisation: (id: string, statut: "ACTIVE" | "DESACTIVEE") =>
+    request<Organisation>(`/organisations/${id}/statut`, {
+      method: "PATCH",
+      body: JSON.stringify({ statut }),
+    }),
 };

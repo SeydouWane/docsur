@@ -1,12 +1,13 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { Role } from '@prisma/client';
+import { Role, StatutOrganisation, StatutUtilisateur, TypeOrganisation } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { MailService } from '../mail/mail.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { estDomainePublic } from './domaines-publics';
 
 const BCRYPT_ROUNDS = 12;
 
@@ -26,6 +27,11 @@ export class AuthService {
   // Enrôlement par domaine (§4, pilier 1, MVP) : le premier compte créé sur
   // un domaine email fonde l'organisation et en devient administrateur ;
   // les suivants rejoignent l'organisation existante comme collaborateurs.
+  //
+  // Un compte individuel (dto.individuel, ou domaine email public comme
+  // gmail.com) fonde systématiquement sa propre organisation, jamais
+  // partagée : un domaine public ne peut pas servir d'identifiant commun à
+  // des inconnus.
   async register(dto: RegisterDto, adresseIp?: string) {
     const domaine = domaineDe(dto.email);
     if (!domaine) {
@@ -39,13 +45,26 @@ export class AuthService {
       throw new ConflictException('Un compte existe déjà pour cet email');
     }
 
-    let organisation = await this.prisma.organisation.findUnique({
-      where: { domaineEmail: domaine },
-    });
+    const individuel = Boolean(dto.individuel) || estDomainePublic(domaine);
+
+    let organisation = individuel
+      ? null
+      : await this.prisma.organisation.findUnique({ where: { domaineEmail: domaine } });
     const estNouvelleOrganisation = !organisation;
+
     if (!organisation) {
       organisation = await this.prisma.organisation.create({
-        data: { nom: domaine, domaineEmail: domaine },
+        data: individuel
+          ? {
+              // Le domaine public seul ne peut pas être la clé d'unicité : deux
+              // particuliers chez le même fournisseur d'email doivent avoir des
+              // organisations distinctes. On y met l'email complet, unique par
+              // construction.
+              nom: dto.nom,
+              domaineEmail: dto.email.toLowerCase(),
+              type: TypeOrganisation.INDIVIDUEL,
+            }
+          : { nom: domaine, domaineEmail: domaine, type: TypeOrganisation.ENTREPRISE },
       });
     }
 
@@ -64,6 +83,7 @@ export class AuthService {
       acteurId: utilisateur.id,
       action: estNouvelleOrganisation ? 'organisation.creation' : 'utilisateur.inscription',
       adresseIp,
+      metadonnees: { individuel },
     });
 
     await this.mail.envoyerBienvenue(utilisateur.email, utilisateur.nom);
@@ -74,6 +94,7 @@ export class AuthService {
   async login(dto: LoginDto, adresseIp?: string) {
     const utilisateur = await this.prisma.utilisateur.findUnique({
       where: { email: dto.email },
+      include: { organisation: true },
     });
     if (!utilisateur) {
       throw new UnauthorizedException('Identifiants invalides');
@@ -82,6 +103,13 @@ export class AuthService {
     const motDePasseValide = await bcrypt.compare(dto.motDePasse, utilisateur.motDePasseHash);
     if (!motDePasseValide) {
       throw new UnauthorizedException('Identifiants invalides');
+    }
+
+    if (utilisateur.statut === StatutUtilisateur.SUSPENDU) {
+      throw new ForbiddenException('Ce compte a été désactivé par un administrateur');
+    }
+    if (utilisateur.organisation.statut === StatutOrganisation.DESACTIVEE) {
+      throw new ForbiddenException('Cette organisation a été désactivée');
     }
 
     await this.audit.enregistrer({
@@ -104,7 +132,7 @@ export class AuthService {
         statut: true,
         mfaActif: true,
         estSuperAdmin: true,
-        organisation: { select: { id: true, nom: true, region: true } },
+        organisation: { select: { id: true, nom: true, region: true, type: true, statut: true } },
       },
     });
     return utilisateur;

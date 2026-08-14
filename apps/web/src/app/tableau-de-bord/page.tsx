@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { api, ApiError, clearToken, getToken, type DocumentMeta, type Profil } from "@/lib/api";
+import { EquipeSection } from "./equipe-section";
+import { PlateformeSection } from "./plateforme-section";
 
 const ROLE_LABEL: Record<Profil["role"], string> = {
   ADMIN: "Administrateur",
@@ -83,6 +85,7 @@ export default function TableauDeBordPage() {
         <div>
           <p className="mb-3 font-mono text-xs uppercase tracking-wider text-accent">
             {profil.organisation.nom} · {profil.organisation.region === "SENEGAL_UEMOA" ? "Sénégal / UEMOA" : "Union européenne"}
+            {profil.organisation.type === "INDIVIDUEL" && " · Compte particulier"}
           </p>
           <h1 className="font-display text-2xl font-extrabold tracking-tight">
             Bonjour {profil.nom.split(" ")[0]}
@@ -140,6 +143,12 @@ export default function TableauDeBordPage() {
           </ul>
         )}
       </div>
+
+      {profil.role === "ADMIN" && profil.organisation.type === "ENTREPRISE" && (
+        <EquipeSection monId={profil.id} />
+      )}
+
+      {profil.estSuperAdmin && <PlateformeSection />}
     </motion.div>
   );
 }

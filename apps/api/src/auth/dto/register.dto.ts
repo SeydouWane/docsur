@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class RegisterDto {
   @IsEmail()
@@ -11,4 +11,11 @@ export class RegisterDto {
   @IsString()
   @MinLength(1)
   nom!: string;
+
+  // Compte individuel (une seule personne) plutôt qu'entreprise : fonde
+  // toujours sa propre organisation, jamais partagée avec d'autres comptes.
+  // Forcé à true côté serveur pour les domaines email publics (§ auth.service).
+  @IsOptional()
+  @IsBoolean()
+  individuel?: boolean;
 }

@@ -29,6 +29,16 @@ enum Region {
   UNION_EUROPEENNE
 }
 
+enum StatutOrganisation {
+  ACTIVE
+  DESACTIVEE
+}
+
+enum TypeOrganisation {
+  ENTREPRISE
+  INDIVIDUEL
+}
+
 enum NiveauSignature {
   SIMPLE
   AVANCEE
@@ -42,13 +52,18 @@ enum StatutSignature {
 }
 
 model Organisation {
-  id             String     @id @default(cuid())
+  id             String             @id @default(cuid())
   nom            String
-  domaineEmail   String     @unique
-  region         Region     @default(SENEGAL_UEMOA)
-  mfaObligatoire Boolean    @default(true)
-  planTarifaire  String     @default("starter")
-  createdAt      DateTime   @default(now())
+  // Domaine email pour une entreprise ; email complet pour un compte
+  // individuel (INDIVIDUEL) — un domaine public (gmail.com...) ne peut pas
+  // servir d'identifiant partagé entre plusieurs particuliers.
+  domaineEmail   String             @unique
+  type           TypeOrganisation   @default(ENTREPRISE)
+  statut         StatutOrganisation @default(ACTIVE)
+  region         Region             @default(SENEGAL_UEMOA)
+  mfaObligatoire Boolean            @default(true)
+  planTarifaire  String             @default("starter")
+  createdAt      DateTime           @default(now())
   utilisateurs   Utilisateur[]
   workspaces     Workspace[]
 }

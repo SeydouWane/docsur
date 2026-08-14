@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { Role } from '@prisma/client';
+import { Role, StatutOrganisation, StatutUtilisateur } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 import type { AuthenticatedUser } from './authenticated-request';
 
 type JwtPayload = {
@@ -13,7 +14,7 @@ type JwtPayload = {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly prisma: PrismaService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -21,7 +22,23 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: JwtPayload): AuthenticatedUser {
+  // Un JWT valide ne suffit pas : un compte suspendu ou une organisation
+  // désactivée après l'émission du token doivent perdre l'accès immédiatement,
+  // pas seulement à l'expiration (jusqu'à 8h). D'où la vérification en base
+  // à chaque requête plutôt qu'une simple confiance dans le payload signé.
+  async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { id: payload.sub },
+      select: { statut: true, organisation: { select: { statut: true } } },
+    });
+
+    if (!utilisateur || utilisateur.statut === StatutUtilisateur.SUSPENDU) {
+      throw new UnauthorizedException('Compte désactivé');
+    }
+    if (utilisateur.organisation.statut === StatutOrganisation.DESACTIVEE) {
+      throw new UnauthorizedException('Organisation désactivée');
+    }
+
     return {
       userId: payload.sub,
       organisationId: payload.organisationId,

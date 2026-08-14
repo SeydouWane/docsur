@@ -6,9 +6,21 @@ import { AuditModule } from './audit/audit.module';
 import { MailModule } from './mail/mail.module';
 import { AuthModule } from './auth/auth.module';
 import { DocumentsModule } from './documents/documents.module';
+import { OrganisationsModule } from './organisations/organisations.module';
+import { UtilisateursModule } from './utilisateurs/utilisateurs.module';
+import { WorkspacesModule } from './workspaces/workspaces.module';
 
 @Module({
-  imports: [PrismaModule, AuditModule, MailModule, AuthModule, DocumentsModule],
+  imports: [
+    PrismaModule,
+    AuditModule,
+    MailModule,
+    AuthModule,
+    DocumentsModule,
+    OrganisationsModule,
+    UtilisateursModule,
+    WorkspacesModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

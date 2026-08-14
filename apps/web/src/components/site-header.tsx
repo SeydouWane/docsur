@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Menu, X } from "lucide-react";
 import { getToken } from "@/lib/api";
 import { Logo } from "./logo";
+import { ThemeToggle } from "./theme-toggle";
 
 const NAV_LINKS = [
   { href: "/outils", label: "Outils" },
@@ -83,17 +84,21 @@ export function SiteHeader() {
               </Link>
             </>
           )}
+          <ThemeToggle />
         </nav>
 
-        <button
-          type="button"
-          aria-label={menuOuvert ? "Fermer le menu" : "Ouvrir le menu"}
-          aria-expanded={menuOuvert}
-          onClick={() => setMenuOuvert((v) => !v)}
-          className="rounded-lg border border-border p-2 text-ink md:hidden"
-        >
-          {menuOuvert ? <X size={18} /> : <Menu size={18} />}
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <ThemeToggle />
+          <button
+            type="button"
+            aria-label={menuOuvert ? "Fermer le menu" : "Ouvrir le menu"}
+            aria-expanded={menuOuvert}
+            onClick={() => setMenuOuvert((v) => !v)}
+            className="rounded-lg border border-border p-2 text-ink"
+          >
+            {menuOuvert ? <X size={18} /> : <Menu size={18} />}
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>

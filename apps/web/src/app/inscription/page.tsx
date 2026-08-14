@@ -4,11 +4,15 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
+import { Building2, User } from "lucide-react";
 import { api, ApiError, setToken } from "@/lib/api";
 import { Field } from "@/components/field";
 
+type TypeCompte = "entreprise" | "particulier";
+
 export default function InscriptionPage() {
   const router = useRouter();
+  const [typeCompte, setTypeCompte] = useState<TypeCompte>("entreprise");
   const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
@@ -20,7 +24,12 @@ export default function InscriptionPage() {
     setErreur(null);
     setEnvoi(true);
     try {
-      const session = await api.inscription({ nom, email, motDePasse });
+      const session = await api.inscription({
+        nom,
+        email,
+        motDePasse,
+        individuel: typeCompte === "particulier",
+      });
       setToken(session.accessToken);
       router.push("/tableau-de-bord");
     } catch (err) {
@@ -40,18 +49,46 @@ export default function InscriptionPage() {
       <p className="mb-3 font-mono text-xs uppercase tracking-wider text-accent">
         Pilier 1 · console administrateur
       </p>
-      <h1 className="font-display text-2xl font-extrabold tracking-tight">
-        Créer votre organisation
-      </h1>
-      <p className="mt-2 text-sm text-muted">
-        Le premier compte créé sur votre domaine email fonde l&apos;organisation et
-        en devient administrateur.
+      <h1 className="font-display text-2xl font-extrabold tracking-tight">Créer votre compte</h1>
+
+      <div className="mt-5 grid grid-cols-2 gap-2 rounded-lg border border-border bg-surface-2 p-1">
+        {(
+          [
+            { value: "entreprise", label: "Entreprise", Icon: Building2 },
+            { value: "particulier", label: "Particulier", Icon: User },
+          ] as const
+        ).map(({ value, label, Icon }) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setTypeCompte(value)}
+            className={`relative flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              typeCompte === value ? "text-ink" : "text-muted hover:text-ink"
+            }`}
+          >
+            {typeCompte === value && (
+              <motion.span
+                layoutId="type-compte-actif"
+                className="absolute inset-0 rounded-md bg-surface shadow-sm"
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              />
+            )}
+            <Icon size={14} className="relative" strokeWidth={1.75} />
+            <span className="relative">{label}</span>
+          </button>
+        ))}
+      </div>
+
+      <p className="mt-4 text-sm text-muted">
+        {typeCompte === "entreprise"
+          ? "Le premier compte créé sur votre domaine email fonde l'organisation et en devient administrateur."
+          : "Votre espace personnel vous appartient en propre — jamais partagé avec d'autres comptes."}
       </p>
 
-      <form onSubmit={onSubmit} className="mt-8 space-y-4">
+      <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <Field label="Nom complet" type="text" value={nom} onChange={setNom} required autoComplete="name" />
         <Field
-          label="Email professionnel"
+          label={typeCompte === "entreprise" ? "Email professionnel" : "Email"}
           type="email"
           value={email}
           onChange={setEmail}

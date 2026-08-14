@@ -28,13 +28,26 @@ export const metadata: Metadata = {
     "Aegis-Num permet aux entreprises de fusionner, convertir et faire signer leurs PDF sans les exposer à des outils grand public non contractualisés.",
 };
 
+const themeInitScript = `
+(function () {
+  try {
+    var stored = localStorage.getItem('theme');
+    if (stored === 'light' || stored === 'dark') {
+      document.documentElement.setAttribute('data-theme', stored);
+    }
+  } catch (e) {}
+})();
+`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
+      suppressHydrationWarning
       className={`${inter.variable} ${jakarta.variable} ${jbmono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />
