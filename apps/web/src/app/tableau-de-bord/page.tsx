@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion } from "motion/react";
 import { api, ApiError, clearToken, getToken, type DocumentMeta, type Profil } from "@/lib/api";
 
 const ROLE_LABEL: Record<Profil["role"], string> = {
@@ -60,14 +61,24 @@ export default function TableauDeBordPage() {
 
   if (!profil || !documents) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-20">
-        <p className="text-sm text-muted">Chargement…</p>
+      <div className="mx-auto max-w-2xl px-6 py-16">
+        <div className="animate-pulse space-y-6">
+          <div className="h-3 w-40 rounded bg-surface-2" />
+          <div className="h-8 w-64 rounded bg-surface-2" />
+          <div className="h-4 w-48 rounded bg-surface-2" />
+          <div className="mt-6 h-20 rounded-lg bg-surface-2" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-16">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="mx-auto max-w-2xl px-6 py-16"
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="mb-3 font-mono text-xs uppercase tracking-wider text-accent">
@@ -80,7 +91,7 @@ export default function TableauDeBordPage() {
             {profil.email} · <span className="font-medium text-ink">{ROLE_LABEL[profil.role]}</span>
             {profil.estSuperAdmin && (
               <span className="ml-2 rounded-full bg-good-soft px-2 py-0.5 font-mono text-[11px] text-good">
-                Superadmin DocSur
+                Superadmin Aegis-Num
               </span>
             )}
           </p>
@@ -129,6 +140,6 @@ export default function TableauDeBordPage() {
           </ul>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

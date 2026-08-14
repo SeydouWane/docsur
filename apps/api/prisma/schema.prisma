@@ -1,4 +1,4 @@
-// Schéma de données DocSur — reflète le dossier de spécifications §6.
+// Schéma de données Aegis-Num — reflète le dossier de spécifications §6.
 // Le contenu des documents n'est jamais stocké ici : seuls les métadonnées
 // et empreintes le sont. Les fichiers vivent dans le stockage objet (§5).
 

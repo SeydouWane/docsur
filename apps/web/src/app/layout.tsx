@@ -23,9 +23,9 @@ const jbmono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DocSur — documents d'entreprise, en sécurité",
+  title: "Aegis-Num — le bouclier numérique de vos documents d'entreprise",
   description:
-    "DocSur permet aux entreprises de fusionner, convertir et faire signer leurs PDF sans les exposer à des outils grand public non contractualisés.",
+    "Aegis-Num permet aux entreprises de fusionner, convertir et faire signer leurs PDF sans les exposer à des outils grand public non contractualisés.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -1,4 +1,4 @@
-<title>DocSur</title>
+<title>Aegis-Num</title>
 <style>
   @font-face {
     font-family: 'Jakarta';
@@ -29,9 +29,9 @@
     --ink: #0F172A;
     --muted: #5B6B84;
     --border: #E1E7F0;
-    --accent: #2563EB;
+    --accent: #0284C7;
     --accent-ink: #FFFFFF;
-    --accent-soft: #DEEAFE;
+    --accent-soft: #DFF3FC;
     --good: #0D9668;
     --good-soft: #DBF5EA;
     --mono-panel: #0F1B33;
@@ -47,9 +47,9 @@
       --ink: #E7ECF6;
       --muted: #93A2BC;
       --border: #223051;
-      --accent: #5B9BFF;
+      --accent: #38BDF8;
       --accent-ink: #06122B;
-      --accent-soft: rgba(91,155,255,0.14);
+      --accent-soft: rgba(56,189,248,0.14);
       --good: #34D399;
       --good-soft: rgba(52,211,153,0.13);
       --mono-panel: #060B16;
@@ -64,9 +64,9 @@
     --ink: #E7ECF6;
     --muted: #93A2BC;
     --border: #223051;
-    --accent: #5B9BFF;
+    --accent: #38BDF8;
     --accent-ink: #06122B;
-    --accent-soft: rgba(91,155,255,0.14);
+    --accent-soft: rgba(56,189,248,0.14);
     --good: #34D399;
     --good-soft: rgba(52,211,153,0.13);
     --mono-panel: #060B16;
@@ -111,11 +111,17 @@
     color: var(--accent);
     margin: 0 0 18px;
   }
+  .brand-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 14px;
+  }
   .cover h1 {
     font-size: clamp(32px, 4.4vw, 46px);
     font-weight: 800;
     line-height: 1.08;
-    margin: 0 0 14px;
+    margin: 0;
     letter-spacing: -0.01em;
   }
   .cover .sub {
@@ -322,11 +328,25 @@
 <div class="shell">
 
   <header class="cover">
-    <p class="eyebrow">Dossier de spécifications — v0.2</p>
-    <h1>DocSur</h1>
+    <p class="eyebrow">Dossier de spécifications — v0.3</p>
+    <div class="brand-row">
+      <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="coverShield" x1="10" y1="4" x2="38" y2="44" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#0F172A" />
+            <stop offset="0.55" stop-color="#0369A1" />
+            <stop offset="1" stop-color="#22D3EE" />
+          </linearGradient>
+        </defs>
+        <path d="M24 3.5 L41 10 V23.5 C41 34.5 33.8 42.7 24 45.5 C14.2 42.7 7 34.5 7 23.5 V10 Z" fill="url(#coverShield)" />
+        <circle cx="24" cy="20" r="6.4" fill="white" fill-opacity="0.92" />
+        <path d="M18.6 32.5 L24 21.5 L29.4 32.5 Z" fill="white" fill-opacity="0.92" />
+      </svg>
+      <h1>Aegis-Num</h1>
+    </div>
     <p class="sub">Plateforme documentaire B2B pour fusionner, convertir et faire signer des PDF professionnels sans les exposer à des outils grand public non contractualisés.</p>
     <div class="meta-row">
-      <div class="meta-item"><p class="k">Statut</p><p class="v"><span class="pill">Nom et signature validés — reste à valider</span></p></div>
+      <div class="meta-item"><p class="k">Statut</p><p class="v"><span class="pill">Identité, nom et signature validés — reste à valider</span></p></div>
       <div class="meta-item"><p class="k">Date</p><p class="v">14 août 2026</p></div>
       <div class="meta-item"><p class="k">Portée</p><p class="v">Vision, périmètre fonctionnel, architecture, conformité</p></div>
       <div class="meta-item"><p class="k">Destinataires</p><p class="v">Direction, RSSI, équipe produit</p></div>
@@ -356,7 +376,7 @@
       <section class="doc-sec" id="s1">
         <div class="sec-head"><span class="sec-num">01</span><h2>Résumé exécutif</h2></div>
         <p class="lede">Les équipes RH, juridique et finance manipulent chaque semaine des documents sensibles — contrats, bulletins de paie, pièces d'identité, dossiers clients — via des outils PDF grand public gratuits. Ces plateformes n'offrent aucune garantie contractuelle de confidentialité : les fichiers transitent par des serveurs tiers hors du périmètre de l'entreprise, sans traçabilité ni contrôle d'accès. C'est une forme de Shadow IT qui expose l'entreprise à un risque de fuite de données et de non-conformité réglementaire.</p>
-        <p><strong>DocSur</strong> est un SaaS B2B qui reprend la simplicité d'usage de ces outils — fusionner, diviser, convertir, signer un PDF en quelques clics — mais à l'intérieur d'un périmètre que l'entreprise maîtrise : authentification d'entreprise, traitement local quand c'est possible, chiffrement de bout en bout, purge automatique des fichiers temporaires et journal d'audit complet. L'ambition n'est pas de réinventer les outils PDF, mais de rendre leur usage professionnel <em>sûr par défaut</em>, sans friction pour l'utilisateur final.</p>
+        <p><strong>Aegis-Num</strong> est un SaaS B2B qui reprend la simplicité d'usage de ces outils — fusionner, diviser, convertir, signer un PDF en quelques clics — mais à l'intérieur d'un périmètre que l'entreprise maîtrise : authentification d'entreprise, traitement local quand c'est possible, chiffrement de bout en bout, purge automatique des fichiers temporaires et journal d'audit complet. L'ambition n'est pas de réinventer les outils PDF, mais de rendre leur usage professionnel <em>sûr par défaut</em>, sans friction pour l'utilisateur final.</p>
       </section>
 
       <section class="doc-sec" id="s2">
@@ -376,10 +396,10 @@
 
       <section class="doc-sec" id="s3">
         <div class="sec-head"><span class="sec-num">03</span><h2>Nom et positionnement</h2></div>
-        <p>Nom retenu : <strong>DocSur</strong> — contraction de « document » et « sûr », immédiatement compréhensible en français, disponible en <span class="tag">.sn</span> et <span class="tag">.io</span>, et cohérent avec un positionnement de souveraineté documentaire plutôt que de simple outil de conversion.</p>
+        <p>Nom retenu : <strong>Aegis-Num</strong> — de l'égide, le bouclier de protection dans la mythologie grecque, et du numérique. Porté par une identité visuelle dédiée (bouclier en dégradé navy vers cyan), avec la signature <em>« le bouclier numérique de vos documents d'entreprise »</em>.</p>
         <div class="callout">
           <p class="head">Alternatives écartées</p>
-          <p>DocVault, PrivaPDF, SecureDoc, KryptonPDF — moins immédiatement lisibles pour un public francophone non technique, ou déjà proches de marques existantes dans l'espace PDF grand public.</p>
+          <p>DocSur, DocVault, PrivaPDF, SecureDoc, KryptonPDF — noms de travail successifs, écartés pour laisser place à une identité de marque propre plutôt qu'à une simple description fonctionnelle.</p>
         </div>
         <p>Positionnement en une phrase : <em>la simplicité d'un outil PDF grand public, avec la maîtrise et la traçabilité qu'exige un RSSI.</em></p>
       </section>
@@ -463,7 +483,7 @@
         </div>
         <div class="callout warn">
           <p class="head">Point d'attention — Censurer PDF</p>
-          <p>La plupart des outils grand public ne font qu'un masquage visuel : un rectangle noir posé sur le texte, qui reste extractible en copiant le contenu. C'est une faille de confidentialité classique. Sur DocSur, « Censurer » doit supprimer le contenu sous-jacent (texte et image), pas seulement le recouvrir — c'est la fonctionnalité la plus différenciante du pilier 3 et celle qui mérite le plus de rigueur en revue de sécurité.</p>
+          <p>La plupart des outils grand public ne font qu'un masquage visuel : un rectangle noir posé sur le texte, qui reste extractible en copiant le contenu. C'est une faille de confidentialité classique. Sur Aegis-Num, « Censurer » doit supprimer le contenu sous-jacent (texte et image), pas seulement le recouvrir — c'est la fonctionnalité la plus différenciante du pilier 3 et celle qui mérite le plus de rigueur en revue de sécurité.</p>
         </div>
       </section>
 
@@ -557,7 +577,7 @@ flowchart LR
         </ul>
         <div class="callout">
           <p class="head">Signature électronique — choix open source</p>
-          <p>Plutôt que de dépendre d'un prestataire commercial eIDAS, DocSur héberge sa propre chaîne de signature : <strong>DSS</strong> (bibliothèque LGPL de la Commission européenne) pour créer et valider des signatures PAdES, <strong>step-ca</strong> pour émettre les certificats X.509 des organisations, et un serveur d'horodatage RFC 3161 auto-hébergé. Cette chaîne couvre nativement les niveaux simple et avancé. Le niveau <em>qualifié</em> au sens strict d'eIDAS exige par définition un prestataire de confiance qualifié (QTSP) et un dispositif QSCD — DocSur ne le proposera que si un client régulé l'exige explicitement, en pluggant un QTSP sur cette même chaîne plutôt qu'en la remplaçant.</p>
+          <p>Plutôt que de dépendre d'un prestataire commercial eIDAS, Aegis-Num héberge sa propre chaîne de signature : <strong>DSS</strong> (bibliothèque LGPL de la Commission européenne) pour créer et valider des signatures PAdES, <strong>step-ca</strong> pour émettre les certificats X.509 des organisations, et un serveur d'horodatage RFC 3161 auto-hébergé. Cette chaîne couvre nativement les niveaux simple et avancé. Le niveau <em>qualifié</em> au sens strict d'eIDAS exige par définition un prestataire de confiance qualifié (QTSP) et un dispositif QSCD — Aegis-Num ne le proposera que si un client régulé l'exige explicitement, en pluggant un QTSP sur cette même chaîne plutôt qu'en la remplaçant.</p>
         </div>
       </section>
 
@@ -613,7 +633,7 @@ flowchart LR
   </div>
 
   <footer class="doc-footer">
-    DocSur — dossier de spécifications v0.2 · nom et architecture de signature validés, reste du document à confirmer avant engagement de développement.
+    Aegis-Num — dossier de spécifications v0.3 · identité, nom et architecture de signature validés, reste du document à confirmer avant engagement de développement.
   </footer>
 
 </div>

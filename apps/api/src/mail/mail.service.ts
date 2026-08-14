@@ -23,7 +23,7 @@ export class MailService {
   private readonly from: string;
 
   constructor() {
-    this.from = process.env.DEFAULT_FROM_EMAIL ?? 'DocSur <no-reply@docsur.local>';
+    this.from = process.env.DEFAULT_FROM_EMAIL ?? 'Aegis-Num <no-reply@aegis-num.local>';
 
     const host = process.env.EMAIL_HOST;
     if (!host) {
@@ -61,9 +61,9 @@ export class MailService {
     const nomAffiche = echapperHtml(nom);
     await this.envoyer({
       to: destinataire,
-      subject: 'Bienvenue sur DocSur',
-      text: `Bonjour ${nom},\n\nVotre compte DocSur a été créé avec succès.\n\nL'équipe DocSur`,
-      html: `<p>Bonjour ${nomAffiche},</p><p>Votre compte DocSur a été créé avec succès.</p><p>L'équipe DocSur</p>`,
+      subject: 'Bienvenue sur Aegis-Num',
+      text: `Bonjour ${nom},\n\nVotre compte Aegis-Num a été créé avec succès.\n\nL'équipe Aegis-Num`,
+      html: `<p>Bonjour ${nomAffiche},</p><p>Votre compte Aegis-Num a été créé avec succès.</p><p>L'équipe Aegis-Num</p>`,
     });
   }
 }

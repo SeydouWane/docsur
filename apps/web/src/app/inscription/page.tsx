@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AnimatePresence, motion } from "motion/react";
 import { api, ApiError, setToken } from "@/lib/api";
 import { Field } from "@/components/field";
 
@@ -30,7 +31,12 @@ export default function InscriptionPage() {
   };
 
   return (
-    <div className="mx-auto max-w-sm px-6 py-20">
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      className="mx-auto max-w-sm px-6 py-20"
+    >
       <p className="mb-3 font-mono text-xs uppercase tracking-wider text-accent">
         Pilier 1 · console administrateur
       </p>
@@ -63,19 +69,28 @@ export default function InscriptionPage() {
           hint="10 caractères minimum"
         />
 
-        {erreur && (
-          <p className="rounded-lg border border-amber-300/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700">
-            {erreur}
-          </p>
-        )}
+        <AnimatePresence>
+          {erreur && (
+            <motion.p
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden rounded-lg border border-amber-300/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700"
+            >
+              {erreur}
+            </motion.p>
+          )}
+        </AnimatePresence>
 
-        <button
+        <motion.button
+          whileHover={{ scale: envoi ? 1 : 1.015 }}
+          whileTap={{ scale: envoi ? 1 : 0.985 }}
           type="submit"
           disabled={envoi}
           className="w-full rounded-lg bg-accent px-5 py-3 text-sm font-medium text-accent-ink disabled:opacity-50"
         >
           {envoi ? "Création…" : "Créer le compte"}
-        </button>
+        </motion.button>
       </form>
 
       <p className="mt-6 text-sm text-muted">
@@ -84,6 +99,6 @@ export default function InscriptionPage() {
           Se connecter
         </Link>
       </p>
-    </div>
+    </motion.div>
   );
 }

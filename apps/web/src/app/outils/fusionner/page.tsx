@@ -3,7 +3,7 @@ import Link from "next/link";
 import { MergeTool } from "./merge-tool";
 
 export const metadata: Metadata = {
-  title: "Fusionner un PDF — DocSur",
+  title: "Fusionner un PDF — Aegis-Num",
   description:
     "Fusionnez plusieurs PDF en un seul document, entièrement dans votre navigateur : les fichiers ne quittent jamais votre poste.",
 };

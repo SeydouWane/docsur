@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { categories } from "@/lib/outils-catalogue";
+import { Logo } from "./logo";
 
 const BADGES = ["Chiffrement AES-256", "Signature PAdES open source", "Purge automatique", "Journal d'audit"];
 
@@ -9,10 +10,11 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-6 py-14">
         <div className="grid gap-10 md:grid-cols-[1.2fr_1fr_1fr_1fr]">
           <div>
-            <p className="font-display text-lg font-extrabold tracking-tight">DocSur</p>
+            <Logo size={26} />
             <p className="mt-3 max-w-xs text-sm text-muted">
-              La simplicité d&apos;un outil PDF grand public, avec la maîtrise
-              et la traçabilité qu&apos;exige un RSSI.
+              Le bouclier numérique de vos documents d&apos;entreprise — la
+              simplicité d&apos;un outil PDF grand public, avec la maîtrise et
+              la traçabilité qu&apos;exige un RSSI.
             </p>
           </div>
 
@@ -72,7 +74,7 @@ export function SiteFooter() {
 
         <div className="mt-12 flex flex-col gap-4 border-t border-border pt-6 md:flex-row md:items-center md:justify-between">
           <p className="text-xs text-muted">
-            © {new Date().getFullYear()} DocSur. Plateforme documentaire B2B.
+            © {new Date().getFullYear()} Aegis-Num. Plateforme documentaire B2B.
           </p>
           <ul className="flex flex-wrap gap-x-5 gap-y-2">
             {BADGES.map((b) => (
