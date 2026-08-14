@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
-import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
 const inter = Inter({
@@ -34,36 +35,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${inter.variable} ${jakarta.variable} ${jbmono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
-        <header className="border-b border-border">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-            <Link href="/" className="font-display text-lg font-extrabold tracking-tight">
-              DocSur
-            </Link>
-            <nav className="flex items-center gap-6 text-sm text-muted">
-              <Link href="/outils/fusionner" className="hover:text-ink">
-                Fusionner un PDF
-              </Link>
-              <a href="/docs/specifications.html" className="hover:text-ink">
-                Spécifications
-              </a>
-              <Link href="/connexion" className="hover:text-ink">
-                Connexion
-              </Link>
-              <Link
-                href="/inscription"
-                className="rounded-lg bg-accent px-3 py-1.5 text-accent-ink"
-              >
-                Créer une organisation
-              </Link>
-            </nav>
-          </div>
-        </header>
+        <SiteHeader />
         <main className="flex-1">{children}</main>
-        <footer className="border-t border-border">
-          <div className="mx-auto max-w-6xl px-6 py-8 text-xs text-muted">
-            DocSur — plateforme documentaire B2B. Traitement local quand c&apos;est possible, chiffré et journalisé quand ce ne l&apos;est pas.
-          </div>
-        </footer>
+        <SiteFooter />
       </body>
     </html>
   );

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { MergeTool } from "./merge-tool";
 
 export const metadata: Metadata = {
@@ -10,8 +11,11 @@ export const metadata: Metadata = {
 export default function FusionnerPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
-      <p className="mb-3 font-mono text-xs uppercase tracking-wider text-accent">
-        Pilier 3 · traitement local
+      <Link href="/outils" className="text-sm text-muted hover:text-ink">
+        ← Tous les outils
+      </Link>
+      <p className="mb-3 mt-4 font-mono text-xs uppercase tracking-wider text-accent">
+        Organiser · traitement local
       </p>
       <h1 className="font-display text-3xl font-extrabold tracking-tight">
         Fusionner un PDF
