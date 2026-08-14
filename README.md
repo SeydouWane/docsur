@@ -19,14 +19,19 @@ modèle de données, sécurité et conformité.
 - **Conversions Office** : [Gotenberg](https://gotenberg.dev/) (LibreOffice +
   Chromium en conteneur) plutôt qu'un moteur maison — traitement serveur
   éphémère, rien n'est écrit sur disque côté API.
+- **Chiffrement/réparation de PDF** : [qpdf](https://qpdf.readthedocs.io/)
+  (bibliothèque C++ de référence) dans un microservice dédié — `pdf-lib` n'a
+  pas de fonction de chiffrement fiable, et qpdf couvre aussi la réparation.
 
 ## Structure du dépôt
 
 ```
 apps/
-  web/    Next.js (App Router, TS, Tailwind, motion) — landing, catalogue
-          d'outils et outils PDF côté navigateur ou via l'API
-  api/    NestJS + Prisma — enrôlement, RBAC, journal d'audit, email, conversions
+  web/           Next.js (App Router, TS, Tailwind, motion) — landing,
+                 catalogue d'outils et outils PDF côté navigateur ou via l'API
+  api/           NestJS + Prisma — enrôlement, RBAC, journal d'audit, email,
+                 conversions, sécurité PDF
+  pdf-securite/  Microservice Express + qpdf — protéger/déverrouiller/réparer
 docs/
   specifications.html   Dossier de spécifications
 ```
@@ -41,7 +46,13 @@ docs/
    ```bash
    docker run -d --name aegis-gotenberg -p 3002:3000 gotenberg/gotenberg:8
    ```
-3. **API** :
+3. **pdf-securite** (Docker, protéger/déverrouiller/réparer) :
+   ```bash
+   cd apps/pdf-securite
+   docker build -t aegis-pdf-securite .
+   docker run -d --name aegis-pdf-securite -p 3003:3003 aegis-pdf-securite
+   ```
+4. **API** :
    ```bash
    cd apps/api
    npm install
@@ -53,7 +64,7 @@ docs/
    Sous Windows, `npm run start:dev` (mode watch) plante parfois à cause d'un
    bug connu de `@nestjs/cli` (tree-kill) — `npm run build` puis `node dist/main.js`
    est plus fiable ; à relancer manuellement après chaque modification.
-4. **Web**, dans un autre terminal :
+5. **Web**, dans un autre terminal :
    ```bash
    cd apps/web
    npm install
@@ -82,6 +93,7 @@ Outils fonctionnels à ce stade (pilier 3) :
 | Numéros de page, Filigrane, Rogner | Local, avec aperçu en direct |
 | JPG en PDF, PDF en JPG | Local (rendu `pdfjs-dist`) |
 | Word/PowerPoint/Excel/HTML en PDF | Serveur, via Gotenberg |
+| Protéger, Déverrouiller, Réparer | Serveur, via qpdf (`apps/pdf-securite`) |
 
 Les outils locaux affichent et manipulent le document réellement rendu
 (vignettes `pdfjs-dist`) plutôt que de simples champs texte.
@@ -111,14 +123,28 @@ Pilier 3 (traitement serveur) :
   Gotenberg/LibreOffice.
 - `POST /conversions/html-vers-pdf` — URL → PDF, via Gotenberg/Chromium ;
   URL validée côté serveur contre le SSRF (IP privées/locales rejetées).
+- `POST /securite-pdf/proteger` — chiffre un PDF (AES-256) avec un mot de
+  passe, via `apps/pdf-securite` (qpdf).
+- `POST /securite-pdf/deverrouiller` — retire le mot de passe d'un PDF.
+- `POST /securite-pdf/reparer` — reconstruit un PDF corrompu (table de
+  références manquante ou invalide).
 
 Le schéma de données (`prisma/schema.prisma`) reflète le modèle documenté en
 §6 : `Organisation`, `Utilisateur`, `Workspace`, `Document`, `LienPartage`,
 `DemandeSignature`, `JournalAudit`.
 
+## apps/pdf-securite
+
+Microservice Express minimal (voir `apps/pdf-securite/src/qpdf.ts`) : chaque
+requête écrit le fichier reçu dans un dossier temporaire unique, appelle le
+binaire `qpdf`, lit le résultat puis supprime immédiatement le dossier —
+rien ne persiste entre deux requêtes. Le verdict de réussite se base sur la
+présence du fichier de sortie plutôt que sur le code de sortie de qpdf (qui
+peut être non-nul pour de simples avertissements).
+
 ## Prochaines étapes
 
 Voir §11 du dossier de spécifications. Restent à construire : OCR,
-Numériser, Réparer, Compresser, Protéger/Déverrouiller, Formulaires,
-Modifier PDF, Signer, Censurer, Comparer, et la conversion PDF → Office
-(Word/PowerPoint/Excel), plus délicate que le sens inverse.
+Numériser, Compresser, Formulaires, Modifier PDF, Signer, Censurer,
+Comparer, et la conversion PDF → Office (Word/PowerPoint/Excel), plus
+délicate que le sens inverse.

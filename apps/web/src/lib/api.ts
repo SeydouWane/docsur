@@ -163,4 +163,23 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url }),
     }),
+
+  // Sécurité PDF — pilier 3, traitement serveur éphémère (qpdf).
+  protegerPdf: (fichier: File, motDePasse: string) => {
+    const formData = new FormData();
+    formData.append("fichier", fichier);
+    formData.append("motDePasse", motDePasse);
+    return requestBlob("/securite-pdf/proteger", { method: "POST", body: formData });
+  },
+  deverrouillerPdf: (fichier: File, motDePasse: string) => {
+    const formData = new FormData();
+    formData.append("fichier", fichier);
+    formData.append("motDePasse", motDePasse);
+    return requestBlob("/securite-pdf/deverrouiller", { method: "POST", body: formData });
+  },
+  reparerPdf: (fichier: File) => {
+    const formData = new FormData();
+    formData.append("fichier", fichier);
+    return requestBlob("/securite-pdf/reparer", { method: "POST", body: formData });
+  },
 };

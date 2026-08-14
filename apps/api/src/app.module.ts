@@ -10,6 +10,7 @@ import { OrganisationsModule } from './organisations/organisations.module';
 import { UtilisateursModule } from './utilisateurs/utilisateurs.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 import { ConversionsModule } from './conversions/conversions.module';
+import { SecuritePdfModule } from './securite-pdf/securite-pdf.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ConversionsModule } from './conversions/conversions.module';
     UtilisateursModule,
     WorkspacesModule,
     ConversionsModule,
+    SecuritePdfModule,
   ],
   controllers: [AppController],
   providers: [AppService],
