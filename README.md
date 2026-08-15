@@ -12,10 +12,14 @@ modèle de données, sécurité et conformité.
 
 - **Nom** : Aegis-Num.
 - **Signature électronique** : chaîne open source auto-hébergée — [DSS](https://github.com/esig/dss)
-  (LGPL, Commission européenne) pour la création/validation PAdES, [step-ca](https://smallstep.com/docs/step-ca/)
-  pour l'autorité de certification interne, horodatage RFC 3161 auto-hébergé.
-  Pas de dépendance à un prestataire commercial eIDAS pour les niveaux
-  simple et avancé (détail en §7 des spécifications).
+  (LGPL, Commission européenne) pour la création PAdES, [step-ca](https://smallstep.com/docs/step-ca/)
+  comme autorité de certification interne (certificat de signataire éphémère,
+  15 minutes, émis à la volée pour chaque signature), [dnl50/tsa](https://github.com/dnl50/tsa)
+  comme autorité d'horodatage RFC 3161 auto-hébergée. Chaîne de confiance
+  entièrement interne : niveau « avancé », pas eIDAS qualifié (détail en §7
+  des spécifications) — les visionneuses PDF grand public affichent donc
+  « émetteur inconnu » tant que le certificat racine d'Aegis-Num n'est pas
+  ajouté à leur magasin de confiance, ce qui est le comportement attendu.
 - **Conversions Office** : [Gotenberg](https://gotenberg.dev/) (LibreOffice +
   Chromium en conteneur) plutôt qu'un moteur maison — traitement serveur
   éphémère, rien n'est écrit sur disque côté API.
@@ -45,6 +49,8 @@ apps/
   pdf-securite/  Microservice Express + qpdf — protéger/déverrouiller/réparer/compresser
   pdf-ocr/       Microservice Express + ocrmypdf/Tesseract — OCR
   pdf-office/    Microservice Express + LibreOffice — PDF vers Word/PowerPoint
+  pdf-signature/ Microservice Spring Boot + DSS — signature PAdES
+  step-ca/       Bootstrap de l'autorité de certification interne et de la TSA
 docs/
   specifications.html   Dossier de spécifications
 ```
@@ -78,7 +84,26 @@ docs/
    docker build -t aegis-pdf-office .
    docker run -d --name aegis-pdf-office -p 3005:3005 aegis-pdf-office
    ```
-6. **API** :
+6. **step-ca + TSA + pdf-signature** (Docker, signature électronique) :
+   ```bash
+   docker network create aegis-network
+   cd apps/step-ca
+   ./bootstrap.sh   # initialise la CA et la TSA — une seule fois par environnement
+   cd ../pdf-signature
+   docker build -t aegis-pdf-signature .
+   docker run -d --name aegis-pdf-signature --network aegis-network -p 3006:3006 \
+     -v "$(pwd)/../step-ca/secrets:/secrets:ro" \
+     -e STEP_CA_URL=https://aegis-step-ca:9000 \
+     -e "STEP_CA_ROOT_FINGERPRINT=$(cat ../step-ca/secrets/root-fingerprint.txt)" \
+     -e STEP_CA_ROOT_CERT_PATH=/secrets/root.crt \
+     -e STEP_CA_PROVISIONER_JWK_PATH=/secrets/provisioner-signatures-priv.json \
+     -e TSA_URL=http://aegis-tsa:8080/sign \
+     aegis-pdf-signature
+   ```
+   `step-ca` et `aegis-tsa` doivent être sur le réseau Docker `aegis-network`
+   (le bootstrap les y attache) : `pdf-signature` les appelle par nom de
+   conteneur, pas par `localhost`.
+7. **API** :
    ```bash
    cd apps/api
    npm install
@@ -90,7 +115,7 @@ docs/
    Sous Windows, `npm run start:dev` (mode watch) plante parfois à cause d'un
    bug connu de `@nestjs/cli` (tree-kill) — `npm run build` puis `node dist/main.js`
    est plus fiable ; à relancer manuellement après chaque modification.
-7. **Web**, dans un autre terminal :
+8. **Web**, dans un autre terminal :
    ```bash
    cd apps/web
    npm install
@@ -125,6 +150,7 @@ Outils fonctionnels à ce stade (pilier 3) :
 | Protéger, Déverrouiller, Réparer, Compresser | Serveur, via qpdf (`apps/pdf-securite`) |
 | OCR PDF | Serveur, via ocrmypdf/Tesseract (`apps/pdf-ocr`) |
 | PDF en Word, PDF en PowerPoint | Serveur, via LibreOffice (`apps/pdf-office`) |
+| Signer PDF | Serveur, authentifié — PAdES via DSS + step-ca + horodatage RFC 3161 (`apps/pdf-signature`) |
 
 Les outils locaux affichent et manipulent le document réellement rendu
 (vignettes `pdfjs-dist`) plutôt que de simples champs texte.
@@ -168,6 +194,12 @@ Pilier 3 (traitement serveur) :
   d'un PDF, via `apps/pdf-office` (LibreOffice, filtre `writer_pdf_import`).
 - `POST /pdf-office/vers-powerpoint` — reconstruit un `.pptx` éditable à
   partir d'un PDF, via `apps/pdf-office` (filtre `impress_pdf_import`).
+- `POST /signature/signer` — **authentifié** (`JwtAuthGuard`). Appose une
+  signature PAdES avec apparence visible (image fournie, positionnée par
+  l'utilisateur) via `apps/pdf-signature`. Le nom gravé dans le certificat
+  éphémère est lu sur le compte connecté (`Utilisateur.nom`), jamais accepté
+  tel quel du client — un certificat cryptographique n'est pas un champ de
+  formulaire.
 
 Le schéma de données (`prisma/schema.prisma`) reflète le modèle documenté en
 §6 : `Organisation`, `Utilisateur`, `Workspace`, `Document`, `LienPartage`,
@@ -214,11 +246,59 @@ réglage manquant — reconstruire un tableur depuis un PDF quelconque suppose
 de détecter des tableaux, un problème différent de la reconstruction de
 texte ou de diapositives.
 
+## apps/step-ca
+
+`bootstrap.sh` initialise, en une seule exécution par environnement :
+
+1. **step-ca** (Docker, image `smallstep/step-ca`) : une CA à deux niveaux
+   (racine + intermédiaire), avec un provisioner JWK dédié
+   (`aegis-signatures`) dont le gabarit de certificat (`signataire.tpl`)
+   pose `KeyUsage=[digitalSignature, nonRepudiation]` et
+   `ExtKeyUsage=[emailProtection]` — pas les usages TLS du gabarit par
+   défaut — avec une durée de vie de 15 minutes (certificats de signataire
+   à usage unique, sur le modèle du « keyless signing » de Sigstore : une
+   paire de clés éphémère est générée à chaque signature, échangée contre un
+   certificat, utilisée une fois, jamais persistée).
+2. **Certificat TSA** : un second provisioner temporaire (`aegis-tsa-bootstrap`,
+   `tsa.tpl` avec `ExtKeyUsage=[timeStamping]` marqué **critique**, requis
+   par RFC 3161) émet un certificat valable 1 an pour l'autorité
+   d'horodatage, puis le provisioner est supprimé — un certificat TSA ne se
+   renouvelle pas à la volée comme un certificat de signataire.
+3. **TSA** (Docker, [dnl50/tsa](https://github.com/dnl50/tsa) — Java/Quarkus,
+   Bouncy Castle) : sert le certificat ci-dessus depuis un keystore PKCS12,
+   répond aux requêtes RFC 3161/5816 sur `/sign`.
+
+`sign-ott.js` construit le jeton one-time-token (JWT ES256) qu'un client du
+provisioner JWK doit signer pour obtenir un certificat de step-ca — sert de
+référence pour l'équivalent Java dans `apps/pdf-signature`. Les secrets
+(clés privées, mots de passe, certificats) vivent dans `./secrets`, jamais
+commités.
+
+## apps/pdf-signature
+
+Microservice Spring Boot (Java 21, Maven) autour de [DSS](https://github.com/esig/dss) :
+à chaque signature, `StepCaClient` génère une paire de clés et une CSR
+éphémères (Bouncy Castle), les échange contre un certificat de 15 minutes
+auprès de step-ca (`StepCaClient.demanderCertificat`), construit un
+keystore PKCS12 en mémoire, puis `SignatureService` produit une signature
+PAdES-BASELINE-T (horodatée via la TSA) avec apparence visible — l'image
+fournie par l'utilisateur, positionnée et dimensionnée selon les paramètres
+reçus (`SignatureFieldParameters` : origine mesurée depuis le **haut** de la
+page, vérifié empiriquement — pas la convention PDF native bas-gauche). La
+clé privée éphémère ne quitte jamais ce processus et n'est jamais écrite sur
+disque.
+
+Vérifié avec un outil tiers indépendant ([`pdfsig`](https://poppler.freedesktop.org/),
+pas DSS lui-même) : signature cryptographiquement valide, document entier
+couvert, horodatage RFC 3161 confirmé côté logs de la TSA. « Émetteur de
+certificat inconnu » est normal et attendu (voir §7 des spécifications).
+
 ## Prochaines étapes
 
 Voir §11 du dossier de spécifications. Reste à construire : PDF → Excel (une
 approche différente, par détection de tableaux, si elle est faite un jour),
-et **Signer** (chaîne DSS + step-ca complète) — volontairement mis de côté
-pour une session dédiée : c'est, à lui seul, un chantier plus vaste que tout
-le reste du pilier 3 réuni (autorité de certification, horodatage RFC 3161,
-PAdES), et le bâcler serait pire que de ne pas l'avoir.
+et l'envoi d'une demande de signature à plusieurs signataires externes (le
+modèle `DemandeSignature`/`Signataire` du schéma existe déjà pour ce flux
+asynchrone — distinct de l'auto-signature immédiate construite ici, qui
+couvre le cas d'usage direct : signer soi-même un document qu'on a sous les
+yeux).

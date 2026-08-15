@@ -13,6 +13,7 @@ import { ConversionsModule } from './conversions/conversions.module';
 import { SecuritePdfModule } from './securite-pdf/securite-pdf.module';
 import { OcrModule } from './ocr/ocr.module';
 import { PdfOfficeModule } from './pdf-office/pdf-office.module';
+import { SignatureModule } from './signature/signature.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { PdfOfficeModule } from './pdf-office/pdf-office.module';
     SecuritePdfModule,
     OcrModule,
     PdfOfficeModule,
+    SignatureModule,
   ],
   controllers: [AppController],
   providers: [AppService],

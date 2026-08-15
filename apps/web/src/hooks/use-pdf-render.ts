@@ -8,6 +8,11 @@ export type PageRendue = {
   dataUrl: string;
   width: number;
   height: number;
+  // Dimensions réelles de la page PDF en points (1/72 pouce) — indépendantes
+  // de l'échelle d'affichage, nécessaires pour convertir une position à
+  // l'écran vers l'espace de coordonnées PDF (ex. placement de signature).
+  pageWidthPt: number;
+  pageHeightPt: number;
 };
 
 // Rendu de pages PDF en images (canvas hors-écran) pour affichage direct
@@ -70,6 +75,8 @@ export function usePdfRender(
             dataUrl: canvas.toDataURL("image/png"),
             width: viewport.width,
             height: viewport.height,
+            pageWidthPt: viewportBase.width,
+            pageHeightPt: viewportBase.height,
           });
         }
 

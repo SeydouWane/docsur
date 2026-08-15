@@ -2,6 +2,7 @@ node_modules/
 .next/
 dist/
 build/
+target/
 .env
 .env.*
 !.env.example
@@ -10,3 +11,7 @@ build/
 Thumbs.db
 .turbo/
 .claude/settings.local.json
+apps/step-ca/secrets/
+.metals/
+.vscode/
+*.class

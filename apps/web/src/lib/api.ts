@@ -207,4 +207,23 @@ export const api = {
     formData.append("fichier", fichier);
     return requestBlob("/pdf-office/vers-powerpoint", { method: "POST", body: formData });
   },
+
+  // Signature électronique — pilier 3, chaîne PAdES/DSS + step-ca + RFC 3161.
+  // Authentifié : le nom gravé dans le certificat est celui du compte
+  // connecté, jamais une valeur envoyée par le client.
+  signerPdf: (
+    fichier: File,
+    image: File,
+    zone: { page: number; x: number; y: number; largeur: number; hauteur: number },
+  ) => {
+    const formData = new FormData();
+    formData.append("fichier", fichier);
+    formData.append("image", image);
+    formData.append("page", String(zone.page));
+    formData.append("x", String(zone.x));
+    formData.append("y", String(zone.y));
+    formData.append("largeur", String(zone.largeur));
+    formData.append("hauteur", String(zone.hauteur));
+    return requestBlob("/signature/signer", { method: "POST", body: formData });
+  },
 };

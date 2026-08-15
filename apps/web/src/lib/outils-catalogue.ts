@@ -317,7 +317,7 @@ export const categories: Categorie[] = [
         description: "Signature électronique PAdES, sur chaîne open source auto-hébergée.",
         icon: PenLine,
         traitement: "serveur",
-        statut: "bientot",
+        statut: "disponible",
       },
       {
         slug: "censurer",

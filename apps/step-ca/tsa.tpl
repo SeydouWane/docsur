@@ -1,0 +1,7 @@
+{
+	"subject": {{ toJson .Subject }},
+	"keyUsage": ["digitalSignature"],
+	"extensions": [
+		{"id": "2.5.29.37", "critical": true, "value": {{ asn1Seq (asn1Enc "oid:1.3.6.1.5.5.7.3.8") | toJson }}}
+	]
+}
