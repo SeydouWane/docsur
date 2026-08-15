@@ -12,6 +12,7 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
 import { ConversionsModule } from './conversions/conversions.module';
 import { SecuritePdfModule } from './securite-pdf/securite-pdf.module';
 import { OcrModule } from './ocr/ocr.module';
+import { PdfOfficeModule } from './pdf-office/pdf-office.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { OcrModule } from './ocr/ocr.module';
     ConversionsModule,
     SecuritePdfModule,
     OcrModule,
+    PdfOfficeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

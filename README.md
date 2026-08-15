@@ -26,6 +26,13 @@ modèle de données, sécurité et conformité.
   et anglais) dans un microservice dédié — ajoute une couche de texte
   invisible par-dessus le rendu original des pages, sans jamais modifier
   l'apparence du document.
+- **PDF → Office** : LibreOffice headless dans un microservice dédié, limité
+  à Word et PowerPoint — LibreOffice sait reconstruire un document Writer ou
+  Impress à partir d'un PDF (filtres d'import dédiés, vérifiés en pratique :
+  le texte reste réellement éditable, pas juste une image), mais n'a aucun
+  filtre d'import PDF vers Calc. PDF → Excel reste donc « bientôt » : ce
+  serait un outil différent (détection de tableaux), pas juste un format de
+  sortie en plus.
 
 ## Structure du dépôt
 
@@ -37,6 +44,7 @@ apps/
                  conversions, sécurité PDF, OCR
   pdf-securite/  Microservice Express + qpdf — protéger/déverrouiller/réparer/compresser
   pdf-ocr/       Microservice Express + ocrmypdf/Tesseract — OCR
+  pdf-office/    Microservice Express + LibreOffice — PDF vers Word/PowerPoint
 docs/
   specifications.html   Dossier de spécifications
 ```
@@ -63,7 +71,14 @@ docs/
    docker build -t aegis-pdf-ocr .
    docker run -d --name aegis-pdf-ocr -p 3004:3004 aegis-pdf-ocr
    ```
-5. **API** :
+5. **pdf-office** (Docker, PDF → Word/PowerPoint — construction la plus
+   longue : installe LibreOffice) :
+   ```bash
+   cd apps/pdf-office
+   docker build -t aegis-pdf-office .
+   docker run -d --name aegis-pdf-office -p 3005:3005 aegis-pdf-office
+   ```
+6. **API** :
    ```bash
    cd apps/api
    npm install
@@ -75,7 +90,7 @@ docs/
    Sous Windows, `npm run start:dev` (mode watch) plante parfois à cause d'un
    bug connu de `@nestjs/cli` (tree-kill) — `npm run build` puis `node dist/main.js`
    est plus fiable ; à relancer manuellement après chaque modification.
-6. **Web**, dans un autre terminal :
+7. **Web**, dans un autre terminal :
    ```bash
    cd apps/web
    npm install
@@ -109,6 +124,7 @@ Outils fonctionnels à ce stade (pilier 3) :
 | Word/PowerPoint/Excel/HTML en PDF | Serveur, via Gotenberg |
 | Protéger, Déverrouiller, Réparer, Compresser | Serveur, via qpdf (`apps/pdf-securite`) |
 | OCR PDF | Serveur, via ocrmypdf/Tesseract (`apps/pdf-ocr`) |
+| PDF en Word, PDF en PowerPoint | Serveur, via LibreOffice (`apps/pdf-office`) |
 
 Les outils locaux affichent et manipulent le document réellement rendu
 (vignettes `pdfjs-dist`) plutôt que de simples champs texte.
@@ -148,6 +164,10 @@ Pilier 3 (traitement serveur) :
 - `POST /ocr` — ajoute une couche de texte reconnu sous chaque page scannée
   (français/anglais, au choix), via `apps/pdf-ocr` (ocrmypdf/Tesseract) ;
   les pages contenant déjà du texte sont laissées intactes (`--skip-text`).
+- `POST /pdf-office/vers-word` — reconstruit un `.docx` éditable à partir
+  d'un PDF, via `apps/pdf-office` (LibreOffice, filtre `writer_pdf_import`).
+- `POST /pdf-office/vers-powerpoint` — reconstruit un `.pptx` éditable à
+  partir d'un PDF, via `apps/pdf-office` (filtre `impress_pdf_import`).
 
 Le schéma de données (`prisma/schema.prisma`) reflète le modèle documenté en
 §6 : `Organisation`, `Utilisateur`, `Workspace`, `Document`, `LienPartage`,
@@ -172,12 +192,33 @@ compression est le travail de l'outil Compresser, pas de celui-ci) ;
 l'image Docker installe Tesseract avec les paquets de langue français et
 anglais.
 
+## apps/pdf-office
+
+Microservice Express minimal (voir `apps/pdf-office/src/libreoffice.ts`) qui
+pilote `soffice --headless --convert-to`. Deux points spécifiques à cette
+conversion, absents des autres microservices :
+
+- Gotenberg ne convertit que *vers* PDF ; il n'expose aucune route pour le
+  sens inverse. `soffice` sait le faire directement (il a ses propres
+  filtres d'import PDF pour Writer et Impress), d'où un microservice séparé
+  plutôt qu'une route Gotenberg supplémentaire.
+- Chaque requête tourne avec son propre profil utilisateur LibreOffice
+  (`-env:UserInstallation` pointé vers le dossier temporaire de la requête) :
+  plusieurs instances de `soffice` qui partageraient un même profil se
+  verrouillent mutuellement sur des requêtes concurrentes.
+
+PDF → Excel n'est pas proposé : vérifié en pratique, LibreOffice n'a
+littéralement aucun filtre d'export vers Calc pour un import PDF (`Error: no
+export filter`), quel que soit le filtre d'import demandé. Ce n'est pas un
+réglage manquant — reconstruire un tableur depuis un PDF quelconque suppose
+de détecter des tableaux, un problème différent de la reconstruction de
+texte ou de diapositives.
+
 ## Prochaines étapes
 
-Voir §11 du dossier de spécifications. Reste à construire : la conversion
-PDF → Office (Word/PowerPoint/Excel — plus délicate que le sens inverse, que
-Gotenberg ne couvre pas), et **Signer** (chaîne DSS + step-ca complète) —
-volontairement mis de côté pour une session dédiée : c'est, à lui seul, un
-chantier plus vaste que tout le reste du pilier 3 réuni (autorité de
-certification, horodatage RFC 3161, PAdES), et le bâcler serait pire que de
-ne pas l'avoir.
+Voir §11 du dossier de spécifications. Reste à construire : PDF → Excel (une
+approche différente, par détection de tableaux, si elle est faite un jour),
+et **Signer** (chaîne DSS + step-ca complète) — volontairement mis de côté
+pour une session dédiée : c'est, à lui seul, un chantier plus vaste que tout
+le reste du pilier 3 réuni (autorité de certification, horodatage RFC 3161,
+PAdES), et le bâcler serait pire que de ne pas l'avoir.

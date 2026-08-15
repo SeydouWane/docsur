@@ -200,7 +200,7 @@ export const categories: Categorie[] = [
         description: "Récupérer un document PDF sous forme de fichier Word éditable.",
         icon: FileText,
         traitement: "serveur",
-        statut: "bientot",
+        statut: "disponible",
       },
       {
         slug: "pdf-vers-powerpoint",
@@ -208,7 +208,7 @@ export const categories: Categorie[] = [
         description: "Récupérer un PDF sous forme de présentation éditable.",
         icon: Presentation,
         traitement: "serveur",
-        statut: "bientot",
+        statut: "disponible",
       },
       {
         slug: "pdf-vers-excel",

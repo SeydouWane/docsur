@@ -195,4 +195,16 @@ export const api = {
     formData.append("langue", langue);
     return requestBlob("/ocr", { method: "POST", body: formData });
   },
+
+  // PDF → Office — pilier 3, traitement serveur éphémère (LibreOffice).
+  pdfVersWord: (fichier: File) => {
+    const formData = new FormData();
+    formData.append("fichier", fichier);
+    return requestBlob("/pdf-office/vers-word", { method: "POST", body: formData });
+  },
+  pdfVersPowerpoint: (fichier: File) => {
+    const formData = new FormData();
+    formData.append("fichier", fichier);
+    return requestBlob("/pdf-office/vers-powerpoint", { method: "POST", body: formData });
+  },
 };
