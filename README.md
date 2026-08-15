@@ -134,7 +134,20 @@ identifiants réels ; voir `apps/api/.env.example` pour le format attendu.
   éphémère).
 - `/outils/[slug]` — page « bientôt disponible » pour les outils du catalogue
   pas encore construits.
-- `/inscription`, `/connexion`, `/tableau-de-bord` — branchés sur l'API réelle.
+- `/inscription`, `/connexion` — branchés sur l'API réelle.
+- `/tableau-de-bord` — shell avec sidebar, navigation adaptée au rôle du
+  compte connecté (`apps/web/src/app/tableau-de-bord/layout.tsx` charge le
+  profil une fois et le distribue par contexte à toutes les sous-pages) :
+  - **Superadmin** : vue d'ensemble plateforme, `/organisations` (déjà
+    existant), `/journal` en portée plateforme entière.
+  - **Admin d'une organisation entreprise** : vue d'ensemble de
+    l'organisation, `/equipe` (collaborateurs + espaces de travail),
+    `/documents`, `/journal` scopé à l'organisation.
+  - **Collaborateur / compte particulier** : vue d'ensemble personnelle,
+    `/documents`, `/journal` limité à ses propres actions, accès rapide aux
+    outils les plus utilisés.
+  Un superadmin qui administre aussi sa propre organisation entreprise voit
+  les deux jeux de rubriques réunis, sans doublon.
 
 Outils fonctionnels à ce stade (pilier 3) :
 
@@ -169,6 +182,10 @@ Pilier 1 (console administrateur) :
 - `GET/POST /workspaces` — démembrements de l'organisation (équipes).
 - `GET/PATCH /organisations` — vue et contrôle plateforme, réservés au
   superadmin (`Utilisateur.estSuperAdmin`).
+- `GET /audit` — lecture du journal, portée automatique selon l'appelant :
+  superadmin voit tout, un ADMIN voit son organisation (jointure sur
+  `acteur.organisationId`), les autres ne voient que leurs propres actions.
+  Jamais un paramètre côté client — la portée est déterminée par le JWT.
 
 Chaque compte suspendu ou organisation désactivée perd l'accès immédiatement
 — vérifié en base à chaque requête (`JwtStrategy`), pas seulement à

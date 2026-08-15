@@ -113,6 +113,14 @@ export type Workspace = {
   _count: { membres: number; documents: number };
 };
 
+export type EntreeAudit = {
+  id: string;
+  action: string;
+  horodatage: string;
+  metadonnees: Record<string, unknown> | null;
+  acteur: { nom: string; email: string } | null;
+};
+
 export type Organisation = {
   id: string;
   nom: string;
@@ -150,6 +158,17 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ statut }),
     }),
+
+  // Journal d'audit — portée automatique selon le rôle de l'appelant
+  // (superadmin: plateforme entière ; admin: son organisation ; les autres:
+  // leurs propres actions), jamais un paramètre choisi côté client.
+  audit: (options?: { limite?: number; action?: string }) => {
+    const params = new URLSearchParams();
+    if (options?.limite) params.set("limite", String(options.limite));
+    if (options?.action) params.set("action", options.action);
+    const qs = params.toString();
+    return request<EntreeAudit[]>(`/audit${qs ? `?${qs}` : ""}`);
+  },
 
   // Conversions — pilier 3, traitement serveur éphémère (LibreOffice/Chromium).
   officeVersPdf: (fichier: File) => {

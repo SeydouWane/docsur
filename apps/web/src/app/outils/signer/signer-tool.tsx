@@ -42,6 +42,9 @@ export function SignerTool() {
 
   useEffect(() => {
     if (!image) {
+      // L'image a disparu (réinitialisation) : l'URL objet précédente n'est
+      // plus valide, pas une valeur dérivable au rendu.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setImageUrl(null);
       return;
     }
@@ -96,7 +99,6 @@ export function SignerTool() {
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zone]);
 
   const commencerRedimensionnement = useCallback((e: React.PointerEvent) => {
@@ -122,7 +124,6 @@ export function SignerTool() {
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zone]);
 
   const traiter = async () => {

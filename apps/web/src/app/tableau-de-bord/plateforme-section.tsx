@@ -29,7 +29,7 @@ export function PlateformeSection() {
   };
 
   return (
-    <div className="mt-10">
+    <div>
       <div className="flex items-center gap-2">
         <h2 className="font-display text-lg font-bold">Organisations</h2>
         <span className="rounded-full bg-good-soft px-2 py-0.5 font-mono text-[11px] text-good">
