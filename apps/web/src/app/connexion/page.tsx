@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { api, ApiError, setToken } from "@/lib/api";
 import { Field } from "@/components/field";
+import { AuthSplit } from "@/components/auth-split";
 
 export default function ConnexionPage() {
   const router = useRouter();
@@ -30,12 +31,12 @@ export default function ConnexionPage() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-      className="mx-auto max-w-sm px-6 py-20"
-    >
+    <AuthSplit citation={0}>
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      >
       <p className="mb-3 font-mono text-xs uppercase tracking-wider text-accent">
         Pilier 1 · console administrateur
       </p>
@@ -89,6 +90,7 @@ export default function ConnexionPage() {
           Créer une organisation
         </Link>
       </p>
-    </motion.div>
+      </motion.div>
+    </AuthSplit>
   );
 }

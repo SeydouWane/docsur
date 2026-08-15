@@ -1,20 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #fbfcfe;
+  --bg: #ffffff;
   --surface: #ffffff;
-  --surface-2: #f1f5fa;
-  --ink: #101828;
-  --muted: #64748b;
-  --border: #e6ebf2;
+  --surface-2: #f6f8fc;
+  --ink: #0f1729;
+  --muted: #66708a;
+  --border: #edf0f6;
   --accent: #0284c7;
   --accent-ink: #ffffff;
-  --accent-soft: #e6f6fd;
+  --accent-soft: #e7f5fe;
   --good: #0d9668;
   --good-soft: #e2f8ef;
   --brand-start: #0f172a;
   --brand-mid: #0ea5e9;
   --brand-end: #67e8f9;
+
+  /* Couleurs de catégorie (cartes d'outils) — inspiré de la variété
+     colorée d'iLovePDF, mais tirées des mêmes teintes Tailwind pour rester
+     cohérentes avec le reste de l'interface plutôt que des couleurs ad hoc. */
+  --cat-1: #0284c7;
+  --cat-1-soft: #e7f5fe;
+  --cat-2: #7c3aed;
+  --cat-2-soft: #f2ecfe;
+  --cat-3: #059669;
+  --cat-3-soft: #e3f7ef;
+  --cat-4: #d97706;
+  --cat-4-soft: #fdf1e0;
+  --cat-5: #db2777;
+  --cat-5-soft: #fce8f2;
+  --cat-6: #4f46e5;
+  --cat-6-soft: #eceafc;
+  --cat-7: #dc2626;
+  --cat-7-soft: #fce9e8;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -33,6 +51,21 @@
     --brand-start: #1b2438;
     --brand-mid: #0ea5e9;
     --brand-end: #67e8f9;
+
+    --cat-1: #7dd3fc;
+    --cat-1-soft: rgba(125, 211, 252, 0.14);
+    --cat-2: #c4b5fd;
+    --cat-2-soft: rgba(196, 181, 253, 0.14);
+    --cat-3: #6ee7b7;
+    --cat-3-soft: rgba(110, 231, 183, 0.14);
+    --cat-4: #fcd34d;
+    --cat-4-soft: rgba(252, 211, 77, 0.14);
+    --cat-5: #f9a8d4;
+    --cat-5-soft: rgba(249, 168, 212, 0.14);
+    --cat-6: #a5b4fc;
+    --cat-6-soft: rgba(165, 180, 252, 0.14);
+    --cat-7: #fca5a5;
+    --cat-7-soft: rgba(252, 165, 165, 0.14);
   }
 }
 
@@ -51,6 +84,21 @@
   --brand-start: #1b2438;
   --brand-mid: #0ea5e9;
   --brand-end: #67e8f9;
+
+  --cat-1: #7dd3fc;
+  --cat-1-soft: rgba(125, 211, 252, 0.14);
+  --cat-2: #c4b5fd;
+  --cat-2-soft: rgba(196, 181, 253, 0.14);
+  --cat-3: #6ee7b7;
+  --cat-3-soft: rgba(110, 231, 183, 0.14);
+  --cat-4: #fcd34d;
+  --cat-4-soft: rgba(252, 211, 77, 0.14);
+  --cat-5: #f9a8d4;
+  --cat-5-soft: rgba(249, 168, 212, 0.14);
+  --cat-6: #a5b4fc;
+  --cat-6-soft: rgba(165, 180, 252, 0.14);
+  --cat-7: #fca5a5;
+  --cat-7-soft: rgba(252, 165, 165, 0.14);
 }
 
 @theme inline {
@@ -65,6 +113,20 @@
   --color-accent-soft: var(--accent-soft);
   --color-good: var(--good);
   --color-good-soft: var(--good-soft);
+  --color-cat-1: var(--cat-1);
+  --color-cat-1-soft: var(--cat-1-soft);
+  --color-cat-2: var(--cat-2);
+  --color-cat-2-soft: var(--cat-2-soft);
+  --color-cat-3: var(--cat-3);
+  --color-cat-3-soft: var(--cat-3-soft);
+  --color-cat-4: var(--cat-4);
+  --color-cat-4-soft: var(--cat-4-soft);
+  --color-cat-5: var(--cat-5);
+  --color-cat-5-soft: var(--cat-5-soft);
+  --color-cat-6: var(--cat-6);
+  --color-cat-6-soft: var(--cat-6-soft);
+  --color-cat-7: var(--cat-7);
+  --color-cat-7-soft: var(--cat-7-soft);
   --font-sans: var(--font-inter);
   --font-display: var(--font-jakarta);
   --font-mono: var(--font-jbmono);

@@ -348,3 +348,21 @@ export function trouverOutil(slug: string): Outil | undefined {
 export function trouverCategorieDe(slug: string): Categorie | undefined {
   return categories.find((c) => c.outils.some((o) => o.slug === slug));
 }
+
+// Une teinte par catégorie (cartes d'outils) — les valeurs cat-1..cat-7 sont
+// définies dans globals.css (light + dark). L'ordre suit celui de
+// `categories` ci-dessus, pas un choix arbitraire par nom.
+const COULEUR_PAR_CATEGORIE: Record<string, string> = {
+  organiser: "cat-1",
+  optimiser: "cat-4",
+  "convertir-en-pdf": "cat-3",
+  "convertir-depuis-pdf": "cat-6",
+  modifier: "cat-5",
+  formulaires: "cat-2",
+  securite: "cat-7",
+};
+
+export function couleurCategorie(slug: string): string {
+  const categorie = trouverCategorieDe(slug);
+  return COULEUR_PAR_CATEGORIE[categorie?.id ?? ""] ?? "cat-1";
+}

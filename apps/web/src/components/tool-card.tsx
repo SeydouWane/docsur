@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Laptop, ServerCog } from "lucide-react";
-import { trouverOutil } from "@/lib/outils-catalogue";
+import { trouverOutil, couleurCategorie } from "@/lib/outils-catalogue";
 
 // Reçoit un slug plutôt que l'objet Outil : Outil.icon est un composant
 // (fonction), non sérialisable à travers la frontière server/client. La
@@ -14,6 +14,7 @@ export function ToolCard({ slug }: { slug: string }) {
 
   const Icon = outil.icon;
   const TraitementIcon = outil.traitement === "local" ? Laptop : ServerCog;
+  const couleur = couleurCategorie(slug);
 
   return (
     <motion.div
@@ -26,7 +27,10 @@ export function ToolCard({ slug }: { slug: string }) {
         className="group flex h-full flex-col gap-3 rounded-xl border border-border bg-surface p-5 shadow-sm transition-colors hover:border-accent/40 hover:shadow-md"
       >
         <div className="flex items-start justify-between">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-accent-soft text-accent transition-transform duration-200 group-hover:scale-110">
+          <span
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-110"
+            style={{ backgroundColor: `var(--${couleur}-soft)`, color: `var(--${couleur})` }}
+          >
             <Icon size={20} strokeWidth={1.75} />
           </span>
           {outil.statut === "bientot" && (
