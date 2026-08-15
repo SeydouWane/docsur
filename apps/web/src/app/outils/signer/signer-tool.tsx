@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, CheckCircle2, PenLine, ShieldCheck, Image as ImageIcon, LogIn } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle2, PenLine, ShieldCheck, LogIn } from "lucide-react";
 import { SinglePdfDropzone } from "@/components/single-pdf-dropzone";
 import { usePdfRender } from "@/hooks/use-pdf-render";
 import { api, ApiError, type Profil } from "@/lib/api";
 import { telechargerBlob, formatTaille } from "@/lib/pdf-page-ranges";
+import { SignatureCreator } from "./signature-creator";
 
 type Zone = { xPct: number; yPct: number; largeurPct: number; hauteurPct: number };
 
@@ -26,8 +27,8 @@ export function SignerTool() {
   const [traitement, setTraitement] = useState(false);
   const [resultat, setResultat] = useState<{ blob: Blob } | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [creatorOuvert, setCreatorOuvert] = useState(false);
   const conteneurRef = useRef<HTMLDivElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const { pages: apercu } = usePdfRender(fichier, { targetWidth: 560, pages: [pageActuelle] });
   const pageApercu = apercu[0];
@@ -61,12 +62,11 @@ export function SignerTool() {
     setErreur(null);
   };
 
-  const choisirImage = (fileList: FileList | null) => {
-    const f = fileList?.[0];
-    if (!f || !f.type.startsWith("image/")) return;
+  const definirSignature = (f: File) => {
     setImage(f);
     setZone(ZONE_PAR_DEFAUT);
     setResultat(null);
+    setCreatorOuvert(false);
   };
 
   const pointVersPct = (clientX: number, clientY: number) => {
@@ -257,25 +257,15 @@ export function SignerTool() {
 
           <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
             <div>
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  choisirImage(e.target.files);
-                  e.target.value = "";
-                }}
-              />
               <button
                 type="button"
-                onClick={() => imageInputRef.current?.click()}
+                onClick={() => setCreatorOuvert(true)}
                 className="flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:border-accent"
               >
-                {image ? <ImageIcon size={16} /> : <PenLine size={16} />}
-                {image ? "Changer l'image de signature" : "Importer une image de signature"}
+                <PenLine size={16} />
+                {image ? "Changer votre signature" : "Créer votre signature"}
               </button>
-              {image && <p className="mt-1 text-xs text-muted">{image.name}</p>}
+              {image && <p className="mt-1 text-xs text-muted">Dessinée, tapée ou importée — modifiable à tout moment</p>}
             </div>
 
             {erreur && <p className="text-sm text-amber-700">{erreur}</p>}
@@ -318,6 +308,13 @@ export function SignerTool() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SignatureCreator
+        ouvert={creatorOuvert}
+        nomParDefaut={profil?.nom ?? ""}
+        onFermer={() => setCreatorOuvert(false)}
+        onCree={definirSignature}
+      />
     </div>
   );
 }
